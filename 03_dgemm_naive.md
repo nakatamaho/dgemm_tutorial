@@ -12,6 +12,7 @@ C \gets \alpha A B + \beta C
 $$
 
 より詳しくは
+
 $$
 (C)_{ij} = \alpha \sum_{k} (A)_{ik} \, (B)_{kj} + \beta \, (C)_{ij}
 $$
