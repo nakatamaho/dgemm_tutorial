@@ -1,4 +1,4 @@
-# 03 もっとも簡単なDGEMMの実装とベンチマーク
+# 03 もっとも簡単なDGEMMの実装
 
 この章では、行列積の DGEMM を実装する最も基本的な方法、いわゆる「naive」な実装例を紹介します。  
 この実装は、最適化手法は一切施されていないため、計算時間は長くなりますが、アルゴリズムの基本的な流れを理解するには最適です。
@@ -26,72 +26,25 @@ $$
 以下は、C++ で書かれた DGEMM の naive な実装例です。
 
 ```cpp
-#include <iostream>
-#include <vector>
+void dgemm(int M, int N, int K, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc) {
 
-// 行列を表現するための型定義
-using Matrix = std::vector<std::vector<double>>;
-
-// DGEMM の naive 実装
-void dgemm_naive(const Matrix &A, const Matrix &B, Matrix &C, double alpha, double beta) {
-    int m = A.size();
-    int n = B[0].size();
-    int k = A[0].size();
-
-    // C = beta * C の初期化
-    for (int i = 0; i < m; ++i)
-        for (int j = 0; j < n; ++j)
-            C[i][j] *= beta;
-
-    // C += alpha * (A * B) の計算
-    for (int i = 0; i < m; ++i) {
-        for (int j = 0; j < n; ++j) {
-            double sum = 0.0;
-            for (int p = 0; p < k; ++p) {
-                sum += A[i][p] * B[p][j];
+    //まずCをbeta倍する
+    for (int j = 0; j < N; j++) {
+        // C の j 列を beta 倍する
+        for (int i = 0; i < M; i++) {
+            C[i + j * ldc] *= beta;
+        }
+    }
+    //Cij <- αＡikBkj + βij
+    for (int i = 0; i < M; i++) {
+        for (int j = 0; j < N; j++) {
+            for (int k = 0; k < K; k++) {
+                C[i + j * ldc] += temp * A[i + k * lda] * B[k + j * ldb];
             }
-            C[i][j] += alpha * sum;
         }
     }
 }
 
-int main() {
-    // 例として、3x3 の行列を用意
-    Matrix A = {
-        {1.0, 2.0, 3.0},
-        {4.0, 5.0, 6.0},
-        {7.0, 8.0, 9.0}
-    };
-
-    Matrix B = {
-        {9.0, 8.0, 7.0},
-        {6.0, 5.0, 4.0},
-        {3.0, 2.0, 1.0}
-    };
-
-    // 結果を格納する行列 C をゼロで初期化
-    Matrix C = {
-        {0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0},
-        {0.0, 0.0, 0.0}
-    };
-
-    double alpha = 1.0;
-    double beta  = 0.0;
-
-    // naive な DGEMM の実行
-    dgemm_naive(A, B, C, alpha, beta);
-
-    // 結果の表示
-    for (const auto &row : C) {
-        for (double val : row) {
-            std::cout << val << " ";
-        }
-        std::cout << "\n";
-    }
-
-    return 0;
-}
 ```
 
 ## 実装の注意点
