@@ -5,15 +5,7 @@
 
 ## naive 実装の概要
 
-DGEMM の演算は、以下の数式で表されます:
-
-$$
-C \gets \alpha A B + \beta C
-$$
-
-
-より詳しくは
-
+DGEMM の演算は、もっとも丁寧には以下の数式で表されます:
 
 $$
 (C)_{ij} = \alpha \sum_{k} (A)_{ik} \, (B)_{kj} + \beta \, (C)_{ij}
