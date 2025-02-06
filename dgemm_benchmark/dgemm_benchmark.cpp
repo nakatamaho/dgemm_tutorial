@@ -1,3 +1,31 @@
+/*
+ * Copyright (c) 2025
+ *     Nakata, Maho
+ *     All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ */
+
 #include <iostream>
 #include <chrono>
 #include <cmath>
@@ -8,56 +36,14 @@
 #include <omp.h>
 #endif
 
-// BLAS DGEMM のプロトタイプ宣言（Fortran 呼び出し規約）
 extern "C" {
-  void dgemm_(const char *transa, const char *transb,
-              const int *m, const int *n, const int *k,
-              const double *alpha, const double *A, const int *lda,
-              const double *B, const int *ldb,
-              const double *beta, double *C, const int *ldc);
+void dgemm_(const char *transa, const char *transb, const int *m, const int *n, const int *k, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb, const double *beta, double *C, const int *ldc);
 }
 
-// 参照実装として BLAS dgemm を呼び出す関数
-void Rgemm_ref(const char *transa, const char *transb,
-               int m, int n, int k,
-               double alpha, const double *A, int lda,
-               const double *B, int ldb,
-               double beta, double *C, int ldc)
-{
-    dgemm_(transa, transb, &m, &n, &k,
-           &alpha, A, &lda,
-           B, &ldb,
-           &beta, C, &ldc);
-}
+void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc)
 
-// OpenMP を用いた自前の行列積（転置なし）
-// 計算: C = alpha * (A * B) + beta * C
-void Rgemm_NN_omp(int m, int n, int k,
-                  double alpha, const double *A, int lda,
-                  const double *B, int ldb,
-                  double beta, double *C, int ldc)
-{
-    int i, j, l;
-#ifdef _OPENMP
-#pragma omp parallel for private(i,j,l) schedule(static)
-#endif
-    for (i = 0; i < m; i++) {
-        for (j = 0; j < n; j++) {
-            double sum = 0.0;
-            for (l = 0; l < k; l++) {
-                sum += A[i + l * lda] * B[l + j * ldb];
-            }
-            C[i + j * ldc] = alpha * sum + beta * C[i + j * ldc];
-        }
-    }
-}
-
-// 古風な乱数による行列生成（列優先格納、ld は先行サイズ）
-void generate_random_matrix(int rows, int cols, double *matrix, int ld)
-{
-    // 現在時刻を seed に用いる
-    unsigned int seed = static_cast<unsigned int>(
-        std::chrono::system_clock::now().time_since_epoch().count());
+    void generate_random_matrix(int rows, int cols, double *matrix, int ld) {
+    unsigned int seed = static_cast<unsigned int>(std::chrono::system_clock::now().time_since_epoch().count());
     std::mt19937 mt(seed);
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
     int i, j;
@@ -69,8 +55,7 @@ void generate_random_matrix(int rows, int cols, double *matrix, int ld)
 }
 
 // 平均と分散を計算（配列は n 個の要素を持つとする）
-void calculate_mean_and_variance(const double *values, int n, double &mean, double &variance)
-{
+void calculate_mean_and_variance(const double *values, int n, double &mean, double &variance) {
     int i;
     mean = 0.0;
     for (i = 0; i < n; i++) {
@@ -86,8 +71,7 @@ void calculate_mean_and_variance(const double *values, int n, double &mean, doub
 }
 
 // 2つの行列（全 size 個の要素）間の最大絶対誤差を計算
-double compute_max_abs_diff(const double *ref, const double *test, int size)
-{
+double compute_max_abs_diff(const double *ref, const double *test, int size) {
     int i;
     double max_diff = 0.0;
     for (i = 0; i < size; i++) {
@@ -102,8 +86,7 @@ double compute_max_abs_diff(const double *ref, const double *test, int size)
 //
 // メイン関数
 //
-int main(void)
-{
+int main(void) {
 #ifdef _OPENMP
     std::cout << "OpenMP is enabled." << std::endl;
     std::cout << "Using maximum available threads: " << omp_get_max_threads() << std::endl;
@@ -112,7 +95,7 @@ int main(void)
 #endif
 
     const int num_trials = 10;
-    
+
     // 乱数生成器（alpha, beta 用）
     std::mt19937 mt(std::random_device{}());
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
@@ -126,19 +109,19 @@ int main(void)
         int lda = m;
         int ldb = k;
         int ldc = m;
-        
+
         // FLOP 数 (n x n 行列の場合、概算で: n * n * (2*n + 1))
         double flop_count = static_cast<double>(n) * n * (2.0 * n + 1.0);
 
         // 行列領域の動的確保
         double *A = new double[lda * k];
         double *B = new double[ldb * n];
-        double *C  = new double[ldc * n];
+        double *C = new double[ldc * n];
         double *C_ref = new double[ldc * n];
 
         // alpha, beta の値（乱数に小さなオフセットを加える）
         double alpha = dist(mt) + dist(mt) * 1.0e-16;
-        double beta  = dist(mt) + dist(mt) * 1.0e-16;
+        double beta = dist(mt) + dist(mt) * 1.0e-16;
 
         // 行列の生成
         generate_random_matrix(m, k, A, lda);
@@ -158,7 +141,7 @@ int main(void)
 
         // 各試行の結果格納用
         double *flops_results = new double[num_trials];
-        double *diff_results  = new double[num_trials];
+        double *diff_results = new double[num_trials];
 
         // 各サイズにつき複数回試行して計測
         for (int trial = 0; trial < num_trials; trial++) {
@@ -192,7 +175,7 @@ int main(void)
             double max_diff = compute_max_abs_diff(C_ref, C_test, m * n);
             diff_results[trial] = max_diff;
 
-            delete [] C_test;
+            delete[] C_test;
         }
 
         // 平均と分散の計算
@@ -217,12 +200,12 @@ int main(void)
         std::cout << "  Mean of Max Diff: " << mean_diff << ", Variance of Max Diff: " << var_diff << "\n";
         std::cout << "---------------------------------\n";
 
-        delete [] A;
-        delete [] B;
-        delete [] C;
-        delete [] C_ref;
-        delete [] flops_results;
-        delete [] diff_results;
+        delete[] A;
+        delete[] B;
+        delete[] C;
+        delete[] C_ref;
+        delete[] flops_results;
+        delete[] diff_results;
     }
 
     return 0;
