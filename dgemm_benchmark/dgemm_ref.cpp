@@ -1,4 +1,46 @@
+/*
+ * Copyright (c) 2025
+ *     Nakata, Maho
+ *     All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ */
 
+#include <cstdio>
+#include <ctype.h>
+#include <cstdlib>
+#include <algorithm>
+
+void Mxerbla(const char *srname, int info) {
+    fprintf(stderr, " ** On entry to %s parameter number %2d had an illegal value\n", srname, info);
+    exit(info);
+}
+
+bool Mlsame(const char *a, const char *b) {
+    if (toupper(*a) == toupper(*b))
+        return true;
+    return false;
+}
 
 void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, double alpha, double *A, int lda, double *B, int ldb, double beta, double *C, int ldc) {
     int nota, notb;
@@ -9,8 +51,8 @@ void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, doub
     double Zero = 0.0, One = 1.0;
     double temp;
 
-    nota = Mlsame_dd(transa, "N");
-    notb = Mlsame_dd(transb, "N");
+    nota = Mlsame(transa, "N");
+    notb = Mlsame(transb, "N");
 
     if (nota) {
         nrowa = m;
@@ -27,9 +69,9 @@ void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, doub
 
     // Test the input parameters.
     info = 0;
-    if (!nota && (!Mlsame_dd(transa, "C")) && (!Mlsame_dd(transa, "T")))
+    if (!nota && (!Mlsame(transa, "C")) && (!Mlsame(transa, "T")))
         info = 1;
-    else if (!notb && (!Mlsame_dd(transb, "C")) && (!Mlsame_dd(transb, "T")))
+    else if (!notb && (!Mlsame(transb, "C")) && (!Mlsame(transb, "T")))
         info = 2;
     else if (m < 0)
         info = 3;
@@ -44,7 +86,7 @@ void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, doub
     else if (ldc < std::max((int)1, m))
         info = 13;
     if (info != 0) {
-        Mxerbla_dd("Rgemm ", info);
+        Mxerbla("dgemm_ref ", info);
         return;
     }
     // Quick return if possible.
