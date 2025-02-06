@@ -1,5 +1,5 @@
 CXX      := g++
-CXXFLAGS := -O2 -std=c++11 -Wall -Wextra
+CXXFLAGS := -fopenmp -O2 -std=c++11 -Wall -Wextra
 
 TARGETS  := dgemm_benchmark
 
