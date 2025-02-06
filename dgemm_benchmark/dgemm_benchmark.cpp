@@ -97,7 +97,7 @@ int main(void) {
     std::mt19937 mt(std::random_device{}());
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
-    for (int n = 1; n <= 1000; n = n + 13) {
+    for (int n = 1; n <= 2000; n = n + 13) {
         int m = n;
         int k = n;
         int lda = m;
