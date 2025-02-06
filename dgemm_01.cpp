@@ -1,5 +1,4 @@
-void dgemm(int M, int N, int K, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc) {
-
+void dgemm_NN(int M, int N, int K, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc) {
     //まずCをbeta倍する
     for (int j = 0; j < N; j++) {
         // C の j 列を beta 倍する
