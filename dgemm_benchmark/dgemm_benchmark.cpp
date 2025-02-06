@@ -32,7 +32,10 @@
 #include <cstdlib>
 #include <random>
 #include <cstring>
+#include <set>
 #include <memory>
+#include <vector>
+#include <algorithm>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -43,6 +46,21 @@ void dgemm_(const char *transa, const char *transb, const int *m, const int *n, 
 }
 
 void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc);
+
+#define MAXDIM 4300
+
+// cf. https://netlib.org/lapack/lawnspdf/lawn41.pdf p.120
+double flops_gemm(int k_i, int m_i, int n_i) {
+    double adds, muls, flops;
+    double k, m, n;
+    m = (double)m_i;
+    n = (double)n_i;
+    k = (double)k_i;
+    muls = m * (k + 2) * n;
+    adds = m * k * n;
+    flops = muls + adds;
+    return flops;
+}
 
 void generate_random_matrix(int rows, int cols, double *matrix, int ld) {
     std::mt19937 mt(std::random_device{}());
@@ -73,15 +91,35 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    std::cout << "m,n,k,maxflops,maxdiff" << std::endl;
-
-    const int num_trials = 10;
+    if (!no_check) {
+        std::cout << "m,n,k,maxflops,maxdiff" << std::endl;
+    } else {
+        std::cout << "m,n,k,maxflops" << std::endl;
+    }
+    const int num_trials = 20;
     std::mt19937 mt(std::random_device{}());
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
-    for (int n = 1; n <= 4000; n += 53) {
+    std::set<int> n_values;
+    for (int n = 1; n <= MAXDIM; n += 7) {
+        n_values.insert(n);
+    }
+    for (int m = 0; (1 << m) <= MAXDIM; ++m) {
+        int pow2 = 1 << m;
+        if (pow2 - 1 > 0 && pow2 - 1 <= MAXDIM)
+            n_values.insert(pow2 - 1);
+        if (pow2 <= MAXDIM)
+            n_values.insert(pow2);
+        if (pow2 + 1 <= MAXDIM)
+            n_values.insert(pow2 + 1);
+    }
+
+    std::vector<int> sorted_n_values(n_values.begin(), n_values.end());
+    std::sort(sorted_n_values.begin(), sorted_n_values.end());
+
+    for (int n : sorted_n_values) {
         int m = n, k = n, lda = m, ldb = k, ldc = m;
-        double flop_count = static_cast<double>(n) * n * (2.0 * n + 1.0);
+        double flop_count = flops_gemm(m, n, k);
 
         double *A = new double[lda * k];
         double *B = new double[ldb * n];
@@ -115,9 +153,12 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        double max_diff = no_check ? 0.0 : compute_max_abs_diff(C, Cref, m * n);
-
-        std::cout << m << "," << n << "," << k << "," << max_flops << "," << max_diff << std::endl;
+        if (!no_check) {
+            double max_diff = compute_max_abs_diff(C, Cref, m * n);
+            std::cout << m << "," << n << "," << k << "," << max_flops << "," << max_diff << std::endl;
+        } else {
+            std::cout << m << "," << n << "," << k << "," << max_flops << std::endl;
+        }
 
         delete[] A;
         delete[] B;
