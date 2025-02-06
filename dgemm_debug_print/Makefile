@@ -1,15 +1,12 @@
 CXX      := g++
 CXXFLAGS := -O2 -std=c++11 -Wall -Wextra
 
-TARGETS  := dgemm_benchmark dgemm_test
+TARGETS  := dgemm_debug_print
 
 all: $(TARGETS)
 
-dgemm_benchmark: dgemm_benchmark.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $^
-
-dgemm_test: dgemm_test.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $^
+dgemm_debug_print: dgemm_debug_print.cpp
+	$(CXX) $(CXXFLAGS) -o $@ $^ -lblas
 
 clean:
 	rm -f $(TARGETS)
