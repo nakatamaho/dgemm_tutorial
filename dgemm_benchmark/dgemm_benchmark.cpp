@@ -48,6 +48,8 @@ void dgemm_(const char *transa, const char *transb, const int *m, const int *n, 
 void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc);
 
 #define MAXDIM 4300
+#define NUMTRIALS 20
+#define STEP_N 1
 
 // cf. https://netlib.org/lapack/lawnspdf/lawn41.pdf p.120
 double flops_gemm(int k_i, int m_i, int n_i) {
@@ -92,16 +94,16 @@ int main(int argc, char *argv[]) {
     }
 
     if (!no_check) {
-        std::cout << "m,n,k,maxflops,maxdiff" << std::endl;
+        std::cout << "m,n,k,maxflops,minflops,maxdiff" << std::endl;
     } else {
-        std::cout << "m,n,k,maxflops" << std::endl;
+        std::cout << "m,n,k,maxflops,minflops" << std::endl;
     }
-    const int num_trials = 20;
+    const int num_trials = NUMTRIALS;
     std::mt19937 mt(std::random_device{}());
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
     std::set<int> n_values;
-    for (int n = 1; n <= MAXDIM; n += 7) {
+    for (int n = 1; n <= MAXDIM; n += STEP_N) {
         n_values.insert(n);
     }
     for (int m = 0; (1 << m) <= MAXDIM; ++m) {
@@ -141,6 +143,7 @@ int main(int argc, char *argv[]) {
         }
 
         double max_flops = 0.0;
+        double min_flops = std::numeric_limits<double>::max();
         for (int trial = 0; trial < num_trials; trial++) {
             memcpy(C, Corg, sizeof(double) * ldc * n);
             auto start = std::chrono::high_resolution_clock::now();
@@ -151,14 +154,14 @@ int main(int argc, char *argv[]) {
             if (flops > max_flops) {
                 max_flops = flops;
             }
+            if (flops < min_flops) {
+                min_flops = flops;
+            }
         }
 
-        if (!no_check) {
-            double max_diff = compute_max_abs_diff(C, Cref, m * n);
-            std::cout << m << "," << n << "," << k << "," << max_flops << "," << max_diff << std::endl;
-        } else {
-            std::cout << m << "," << n << "," << k << "," << max_flops << std::endl;
-        }
+        double max_diff = no_check ? 0.0 : compute_max_abs_diff(C, Cref, m * n);
+
+        std::cout << m << "," << n << "," << k << "," << max_flops << "," << min_flops << "," << max_diff << std::endl;
 
         delete[] A;
         delete[] B;
