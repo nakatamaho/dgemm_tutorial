@@ -47,10 +47,10 @@ void dgemm_(const char *transa, const char *transb, const int *m, const int *n, 
 
 void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc);
 
-#define DIM_START 5000
+#define DIM_START 1
 #define DIM_END 20000
 #define NUMTRIALS 10
-#define STEP 13
+#define STEP 1
 
 // cf. https://netlib.org/lapack/lawnspdf/lawn41.pdf p.120
 double flops_gemm(int k_i, int m_i, int n_i) {
