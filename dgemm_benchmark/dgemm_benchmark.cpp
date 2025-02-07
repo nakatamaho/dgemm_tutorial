@@ -160,8 +160,11 @@ int main(int argc, char *argv[]) {
         }
 
         double max_diff = no_check ? 0.0 : compute_max_abs_diff(C, Cref, m * n);
-
-        std::cout << m << "," << n << "," << k << "," << max_flops << "," << min_flops << "," << max_diff << std::endl;
+        if (!no_check) {
+            std::cout << m << "," << n << "," << k << "," << max_flops << "," << min_flops << "," << max_diff << std::endl;
+	} else {
+            std::cout << m << "," << n << "," << k << "," << max_flops << "," << min_flops << std::endl;
+	}
 
         delete[] A;
         delete[] B;
