@@ -13,7 +13,7 @@ df["minflops"] /= 1000
 
 # プロットの作成
 plt.figure(figsize=(10, 6))
-plt.plot(df["n"], df["minflops"], label="Min FLOPS", marker='s', markersize=2, linestyle='None')
+plt.plot(df["n"], df["minflops"], label="Min FLOPS", marker='s', markersize=1, linestyle='None')
 plt.plot(df["n"], df["maxflops"], label="Max FLOPS", marker='o', markersize=1, linestyle='None')
 
 # Theoretical Peak Performance
