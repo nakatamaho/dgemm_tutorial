@@ -47,9 +47,10 @@ void dgemm_(const char *transa, const char *transb, const int *m, const int *n, 
 
 void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc);
 
-#define MAXDIM 30000
+#define DIM_START 1
+#define DIM_END 20000
 #define NUMTRIALS 10
-#define STEP_N 1013
+#define STEP_N 1
 
 // cf. https://netlib.org/lapack/lawnspdf/lawn41.pdf p.120
 double flops_gemm(int k_i, int m_i, int n_i) {
@@ -103,16 +104,16 @@ int main(int argc, char *argv[]) {
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
     std::set<int> n_values;
-    for (int n = 1; n <= MAXDIM; n += STEP_N) {
+    for (int n = DIM_START; n <= DIM_END; n += STEP_N) {
         n_values.insert(n);
     }
-    for (int m = 0; (1 << m) <= MAXDIM; ++m) {
+    for (int m = 0; (1 << m) <= DIM_END; ++m) {
         int pow2 = 1 << m;
-        if (pow2 - 1 > 0 && pow2 - 1 <= MAXDIM)
+        if (pow2 - 1 > 0 && pow2 - 1 <= DIM_END)
             n_values.insert(pow2 - 1);
-        if (pow2 <= MAXDIM)
+        if (pow2 <= DIM_END)
             n_values.insert(pow2);
-        if (pow2 + 1 <= MAXDIM)
+        if (pow2 + 1 <= DIM_END)
             n_values.insert(pow2 + 1);
     }
 

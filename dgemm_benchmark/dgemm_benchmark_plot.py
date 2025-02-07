@@ -17,7 +17,10 @@ plt.plot(df["n"], df["minflops"], label="Min FLOPS", marker='s', markersize=2, l
 plt.plot(df["n"], df["maxflops"], label="Max FLOPS", marker='o', markersize=1, linestyle='None')
 
 # Theoretical Peak Performance
-plt.axhline(y=1894.4, color='red', linestyle='--', linewidth=1, label='Theoretical Peak Performance of Ryzen 3970X')
+peak_performance = 1894.4
+plt.axhline(y=peak_performance, color='red', linestyle='--', linewidth=1, label='Theoretical Peak Performance')
+plt.text(df["n"].max(), peak_performance, f"{peak_performance} GFLOPS", color='red', verticalalignment='bottom', horizontalalignment='right')
+
 
 plt.xlabel("Matrix Size (n x n)")
 plt.ylabel("FLOPS (GFLOPS)")
