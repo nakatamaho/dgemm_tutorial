@@ -27,8 +27,7 @@ plt.ylabel("FLOPS (GFLOPS)")
 plt.title("DGEMM Performance")
 plt.legend()
 plt.grid()
-#plt.xlim(left=0)
-plt.xlim(4000, 5000)
+plt.xlim(left=0)
 plt.ylim(bottom=0)
 
 # PDFとPNGで保存

@@ -47,10 +47,10 @@ void dgemm_(const char *transa, const char *transb, const int *m, const int *n, 
 
 void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc);
 
-#define DIM_START 1
+#define DIM_START 5000
 #define DIM_END 20000
 #define NUMTRIALS 10
-#define STEP_N 1
+#define STEP 13
 
 // cf. https://netlib.org/lapack/lawnspdf/lawn41.pdf p.120
 double flops_gemm(int k_i, int m_i, int n_i) {
@@ -104,16 +104,16 @@ int main(int argc, char *argv[]) {
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
     std::set<int> n_values;
-    for (int n = DIM_START; n <= DIM_END; n += STEP_N) {
+    for (int n = DIM_START; n <= DIM_END; n += STEP) {
         n_values.insert(n);
     }
     for (int m = 0; (1 << m) <= DIM_END; ++m) {
         int pow2 = 1 << m;
-        if (pow2 - 1 > 0 && pow2 - 1 <= DIM_END)
-            n_values.insert(pow2 - 1);
-        if (pow2 <= DIM_END)
+        if (pow2 >= DIM_START && pow2 <= DIM_END)
             n_values.insert(pow2);
-        if (pow2 + 1 <= DIM_END)
+        if (pow2 - 1 >= DIM_START && pow2 - 1 <= DIM_END)
+            n_values.insert(pow2 - 1);
+        if (pow2 + 1 >= DIM_START && pow2 + 1 <= DIM_END)
             n_values.insert(pow2 + 1);
     }
 
@@ -163,9 +163,9 @@ int main(int argc, char *argv[]) {
         double max_diff = no_check ? 0.0 : compute_max_abs_diff(C, Cref, m * n);
         if (!no_check) {
             std::cout << m << "," << n << "," << k << "," << max_flops << "," << min_flops << "," << max_diff << std::endl;
-	} else {
+        } else {
             std::cout << m << "," << n << "," << k << "," << max_flops << "," << min_flops << std::endl;
-	}
+        }
 
         delete[] A;
         delete[] B;
