@@ -47,9 +47,9 @@ void dgemm_(const char *transa, const char *transb, const int *m, const int *n, 
 
 void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc);
 
-#define MAXDIM 4300
-#define NUMTRIALS 20
-#define STEP_N 1
+#define MAXDIM 30000
+#define NUMTRIALS 10
+#define STEP_N 1013
 
 // cf. https://netlib.org/lapack/lawnspdf/lawn41.pdf p.120
 double flops_gemm(int k_i, int m_i, int n_i) {
