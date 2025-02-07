@@ -5,8 +5,8 @@ df = pd.read_csv("dgemm_benchmark_results.csv")
 
 # 
 plt.figure(figsize=(10, 6))
-plt.plot(df["n"], df["maxflops"], label="Max FLOPS", marker='o')
-plt.plot(df["n"], df["minflops"], label="Min FLOPS", marker='s')
+plt.plot(df["n"], df["maxflops"], label="Max FLOPS", marker='o', markersize=3)
+plt.plot(df["n"], df["minflops"], label="Min FLOPS", marker='s', markersize=3)
 plt.xlabel("Matrix Size (n x n)")
 plt.ylabel("FLOPS (MFLOPS)")
 plt.title("DGEMM Performance")
