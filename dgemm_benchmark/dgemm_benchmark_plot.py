@@ -15,6 +15,10 @@ df["minflops"] /= 1000
 plt.figure(figsize=(10, 6))
 plt.plot(df["n"], df["minflops"], label="Min FLOPS", marker='s', markersize=2, linestyle='None')
 plt.plot(df["n"], df["maxflops"], label="Max FLOPS", marker='o', markersize=1, linestyle='None')
+
+# Theoretical Peak Performance
+plt.axhline(y=947.2, color='red', linestyle='--', linewidth=1, label='Theoretical Peak Performance of Ryzen 3970X')
+
 plt.xlabel("Matrix Size (n x n)")
 plt.ylabel("FLOPS (GFLOPS)")
 plt.title("DGEMM Performance")
