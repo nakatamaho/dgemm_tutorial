@@ -36,10 +36,13 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <mm_malloc.h>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+
+#define ALIGNMENT 64
 
 extern "C" {
 void dgemm_(const char *transa, const char *transb, const int *m, const int *n, const int *k, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb, const double *beta, double *C, const int *ldc);
@@ -48,9 +51,9 @@ void dgemm_(const char *transa, const char *transb, const int *m, const int *n, 
 void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc);
 
 #define DIM_START 1
-#define DIM_END 20000
+#define DIM_END 10000
 #define NUMTRIALS 10
-#define STEP 1
+#define STEP 17
 
 // cf. https://netlib.org/lapack/lawnspdf/lawn41.pdf p.120
 double flops_gemm(int k_i, int m_i, int n_i) {
@@ -107,14 +110,14 @@ int main(int argc, char *argv[]) {
     for (int n = DIM_START; n <= DIM_END; n += STEP) {
         n_values.insert(n);
     }
-    for (int m = 0; (1 << m) <= DIM_END; ++m) {
-        int pow2 = 1 << m;
-        if (pow2 >= DIM_START && pow2 <= DIM_END)
-            n_values.insert(pow2);
-        if (pow2 - 1 >= DIM_START && pow2 - 1 <= DIM_END)
-            n_values.insert(pow2 - 1);
-        if (pow2 + 1 >= DIM_START && pow2 + 1 <= DIM_END)
-            n_values.insert(pow2 + 1);
+    for (int m = 0; (128 * m) <= DIM_END; ++m) {
+        int multiple128 = 128 * m;
+        if (multiple128 >= DIM_START && multiple128 <= DIM_END)
+            n_values.insert(multiple128);
+        if (multiple128 - 128 >= DIM_START && multiple128 - 128 <= DIM_END)
+            n_values.insert(multiple128 - 128);
+        if (multiple128 + 128 >= DIM_START && multiple128 + 128 <= DIM_END)
+            n_values.insert(multiple128 + 128);
     }
 
     std::vector<int> sorted_n_values(n_values.begin(), n_values.end());
@@ -124,11 +127,11 @@ int main(int argc, char *argv[]) {
         int m = n, k = n, lda = m, ldb = k, ldc = m;
         double flop_count = flops_gemm(m, n, k);
 
-        double *A = new double[lda * k];
-        double *B = new double[ldb * n];
-        double *C = new double[ldc * n];
-        double *Corg = new double[ldc * n];
-        double *Cref = new double[ldc * n];
+        double *A = static_cast<double *>(_mm_malloc(lda * k * sizeof(double), ALIGNMENT));
+        double *B = static_cast<double *>(_mm_malloc(ldb * n * sizeof(double), ALIGNMENT));
+        double *C = static_cast<double *>(_mm_malloc(ldc * n * sizeof(double), ALIGNMENT));
+        double *Corg = static_cast<double *>(_mm_malloc(ldc * n * sizeof(double), ALIGNMENT));
+        double *Cref = static_cast<double *>(_mm_malloc(ldc * n * sizeof(double), ALIGNMENT));
 
         double alpha = dist(mt);
         double beta = dist(mt);
@@ -167,11 +170,11 @@ int main(int argc, char *argv[]) {
             std::cout << m << "," << n << "," << k << "," << max_flops << "," << min_flops << std::endl;
         }
 
-        delete[] A;
-        delete[] B;
-        delete[] C;
-        delete[] Corg;
-        delete[] Cref;
+        _mm_free(A);
+        _mm_free(B);
+        _mm_free(C);
+        _mm_free(Corg);
+        _mm_free(Cref);
     }
     return 0;
 }
