@@ -50,8 +50,8 @@ void dgemm_(const char *transa, const char *transb, const int *m, const int *n, 
 
 void dgemm_ref(const char *transa, const char *transb, int m, int n, int k, double alpha, const double *A, int lda, const double *B, int ldb, double beta, double *C, int ldc);
 
-#define DIM_START 12819
-#define DIM_END 20200
+#define DIM_START 1
+#define DIM_END 21000
 #define NUMTRIALS 10
 #define STEP 17
 
