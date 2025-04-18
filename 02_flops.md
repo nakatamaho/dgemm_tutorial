@@ -1,28 +1,39 @@
 
-
-以下は、Ryzen Threadripper 3970X の理論性能（FLOPS）の計算例と、それに関する考察を交えた解説です。  
+# Ryzen 3970Xの理論性能値の計算方法
+Ryzen Threadripper 3970X の理論性能（FLOPS）の計算方法を解説します。  
 なお、ここでの計算はあくまで**理論上のピーク値**であり、実際のアプリケーションでの性能は違う場合が多々あることに注意してください。
-
----
 
 ## 1. FLOPS の基本
 
 **FLOPS (Floating Point Operations Per Second)** とは、1秒間に実行できる浮動小数点演算の回数を表す指標です。  
 「理論性能」とは、CPU 内のすべての演算ユニットが理想的に（すなわち、全ての命令が完全にパイプラインに乗り、かつデータ供給が滞りなく行われる場合に）フル稼働しているときの最大値です。  
-たとえば、意味のない単純な 1+1 の演算を連続して行った場合の回数と考えることもできます。
-
----
+たとえば、意味のない単純な 「1+1 の演算を連続して行った場合の、1秒間で実行できる浮動小数点演算の回数」と考えることもできます。
 
 ## 2. Ryzen Threadripper 3970X の基本スペック
 
-Ryzen Threadripper 3970X の主要なスペックは以下の通りです（※数値は概算または公表値に基づく）:
-
+Ryzen Threadripper 3970X の主要なスペックは以下の通りです。
+- [AMDの公式プロセッサの仕様ページ](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html)
+-  [Passmarkのページ](https://www.cpubenchmark.net/cpu.php?cpu=AMD+Ryzen+Threadripper+3970X)
 - **コア数**：32 コア  
 - **スレッド数**：64 スレッド  
-- **基本クロック周波数**：約 3.7 GHz（必要に応じてターボ時はさらに高い周波数になります）  
+- **基本クロック周波数**：約 3.7 GHz ターボ時は4.5GHz  
 - **SIMD 命令セット**：AVX2 をサポート（256ビット幅）
 
----
+## 3. Ryzen Threadripper 3970X の基本スペックの調べ方
+
+基本スペックの一次情報を調べるのが最も正確です。まずはLinuxのターミナルを開き、
+```bash
+cat /proc/cpuinfo | grep 'model name' | uniq
+```
+型番を得ましょう。
+```
+$ cat /proc/cpuinfo | grep 'model name' | uniq
+model name      : AMD Ryzen Threadripper 3970X 32-Core Processor
+```
+そこからGoogle検索例を挙げておきます。
+- [Google検索例](https://www.google.com/search?q=site%3Aamd.com+Ryzen+3970X)
+- [AMDのプロセッサの仕様のページ](https://www.amd.com/ja/products/specifications/processors.html)
+  
 
 ## 3. 理論性能の計算方法
 
