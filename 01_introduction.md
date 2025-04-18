@@ -53,15 +53,21 @@ void dgemm_(const char* TRANSA, const char* TRANSB,
 DGEMM における `op(A)` および `op(B)` は、行列に適用する演算を指定する引数です。  
 `TRANSA`／`TRANSB` の値で以下を選択できます:
 
-- `N` (No transpose):  
-$$
-    \mathrm{op}(A) = A
-$$
-- `T` (Transpose):  
-$$
-    \mathrm{op}(A) = A^{T}
-$$
-- `C` (Conjugate transpose):  
-$$
-    \mathrm{op}(A) = A^{H} \quad(\text{実数行列では }A^{T}\text{ と同じ})
-$$
+- `N` (No transpose):
+
+  $$
+  \mathrm{op}(A) = A
+  $$
+
+- `T` (Transpose):
+
+  $$
+  \mathrm{op}(A) = A^{T}
+  $$
+
+- `C` (Conjugate transpose):
+
+  $$
+  \mathrm{op}(A) = A^{H}
+  \quad(\text{実数行列では }A^{T}\text{ と同じ})
+  $$
