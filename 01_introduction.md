@@ -55,19 +55,19 @@ DGEMM における `op(A)` および `op(B)` は、行列に適用する演算�
 
 - `N` (No transpose):
 
-  $$
-  \mathrm{op}(A) = A
-  $$
+$$
+\mathrm{op}(A) = A
+$$
 
 - `T` (Transpose):
 
-  $$
-  \mathrm{op}(A) = A^{T}
-  $$
+$$
+\mathrm{op}(A) = A^{T}
+$$
 
 - `C` (Conjugate transpose):
 
-  $$
-  \mathrm{op}(A) = A^{H}
-  \quad(\text{実数行列では }A^{T}\text{ と同じ})
-  $$
+$$
+\mathrm{op}(A) = A^{H}
+\quad(\text{実数行列では }A^{T}\text{ と同じ})
+$$
