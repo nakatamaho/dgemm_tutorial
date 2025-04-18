@@ -1,9 +1,9 @@
 
 # Ryzen 3970Xの理論性能値の計算方法
-Ryzen Threadripper 3970X の理論性能（FLOPS）の計算方法を解説します。  
+Ryzen Threadripper 3970X の理論性能（theoretical peak performance）の計算方法を解説します。理論性能は、コンピュータやプロセッサ、スーパーコンピュータなどが理想的な条件下で達成可能な最大の計算性能を指します。これは一般に FLOPS（Floating Point Operations Per Second：毎秒浮動小数点演算回数）という単位で表されます。
 なお、ここでの計算はあくまで**理論上のピーク値**であり、実際のアプリケーションでの性能は違う場合が多々あることに注意してください。
 
-## 1. FLOPS の基本
+## 1. FLOPS とは
 
 **FLOPS (Floating Point Operations Per Second)** とは、1秒間に実行できる浮動小数点演算の回数を表す指標です。  
 「理論性能」とは、CPU 内のすべての演算ユニットが理想的に（すなわち、全ての命令が完全にパイプラインに乗り、かつデータ供給が滞りなく行われる場合に）フル稼働しているときの最大値です。  
@@ -13,7 +13,7 @@ Ryzen Threadripper 3970X の理論性能（FLOPS）の計算方法を解説し�
 
 Ryzen Threadripper 3970X の主要なスペックは以下の通りです。
 - [AMDの公式プロセッサの仕様ページ](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html)
--  [Passmarkのページ](https://www.cpubenchmark.net/cpu.php?cpu=AMD+Ryzen+Threadripper+3970X)
+- [Passmarkのページ](https://www.cpubenchmark.net/cpu.php?cpu=AMD+Ryzen+Threadripper+3970X)
 - **コア数**：32 コア  
 - **スレッド数**：64 スレッド  
 - **基本クロック周波数**：約 3.7 GHz ターボ時は4.5GHz  
@@ -21,7 +21,7 @@ Ryzen Threadripper 3970X の主要なスペックは以下の通りです。
 
 ## 3. Ryzen Threadripper 3970X の基本スペックの調べ方
 
-基本スペックの一次情報を調べるのが最も正確です。まずはLinuxでは、/proc/cpuinfoにありますので、terminalを開いて、次のコマンドを実行してください。
+最も正確に基本スペックを確認するには、CPUの製造元が提供している公式カタログ（一次情報）を参照するのが確実です。なお、Linux環境では、CPUの型番を含む情報は /proc/cpuinfo に記載されています。以下のコマンドをターミナルで実行することで、確認できます：
 ```bash
 cat /proc/cpuinfo | grep 'model name' | uniq
 ```
@@ -36,7 +36,8 @@ $ cat /proc/cpuinfo | grep 'model name' | uniq
 model name      : Intel(R) Core(TM) i5-9600 CPU @ 3.10GHz
 ```
 が得られました。
-そこからのGoogle検索例を挙げておきます。型番だけでなく、site:amd.com, site:intel.com などを入れておくと公式ページにたどり着きやすくなります。
+このように取得したCPUの型番をもとに、公式情報を検索すると、より正確なスペックにたどり着けます。
+検索の際には、型番に加えて site:amd.com や site:intel.com などを指定することで、製造元の公式ページがヒットしやすくなります。
 - [AMD CPU Google検索例](https://www.google.com/search?q=site%3Aamd.com+Ryzen+3970X)
 - [AMDのプロセッサの仕様のページ](https://www.amd.com/ja/products/specifications/processors.html)
 - [Intel CPU Google検索例](https://www.google.com/search?q=Intel(R)+Core(TM)+i5-9600+CPU+%2540+3.10GHz+site%253Aintel.com)
