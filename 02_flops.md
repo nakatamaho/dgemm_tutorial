@@ -30,10 +30,17 @@ cat /proc/cpuinfo | grep 'model name' | uniq
 $ cat /proc/cpuinfo | grep 'model name' | uniq
 model name      : AMD Ryzen Threadripper 3970X 32-Core Processor
 ```
-そこからGoogle検索例を挙げておきます。
-- [Google検索例](https://www.google.com/search?q=site%3Aamd.com+Ryzen+3970X)
+なお手持ちのIntelのマシンでも
+```
+$ cat /proc/cpuinfo | grep 'model name' | uniq
+model name      : Intel(R) Core(TM) i5-9600 CPU @ 3.10GHz
+```
+が得られました。
+そこからのGoogle検索例を挙げておきます。型番だけでなく、site:amd.com, site:intel.com などを入れておくと公式ページにたどり着きやすくなります。
+- [AMD CPU Google検索例](https://www.google.com/search?q=site%3Aamd.com+Ryzen+3970X)
 - [AMDのプロセッサの仕様のページ](https://www.amd.com/ja/products/specifications/processors.html)
-  
+- [Intel CPU Google検索例](https://www.google.com/search?q=Intel(R)+Core(TM)+i5-9600+CPU+%2540+3.10GHz+site%253Aintel.com)
+- [IntelのCOre i5-9600の仕様のページ](https://www.intel.co.jp/content/www/jp/ja/products/sku/134900/intel-core-i59600-processor-9m-cache-up-to-4-60-ghz/specifications.html)
 
 ## 3. 理論性能の計算方法
 
