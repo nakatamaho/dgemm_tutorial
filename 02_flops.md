@@ -21,11 +21,11 @@ Ryzen Threadripper 3970X の主要なスペックは以下の通りです。
 
 ## 3. Ryzen Threadripper 3970X の基本スペックの調べ方
 
-基本スペックの一次情報を調べるのが最も正確です。まずはLinuxのターミナルを開き、
+基本スペックの一次情報を調べるのが最も正確です。まずはLinuxでは、/proc/cpuinfoにありますので、terminalを開いて、次のコマンドを実行してください。
 ```bash
 cat /proc/cpuinfo | grep 'model name' | uniq
 ```
-型番を得ましょう。
+こちらの環境では以下のような結果が得られました。
 ```
 $ cat /proc/cpuinfo | grep 'model name' | uniq
 model name      : AMD Ryzen Threadripper 3970X 32-Core Processor
