@@ -40,7 +40,7 @@ model name      : Intel(R) Core(TM) i5-9600 CPU @ 3.10GHz
 - [AMD Ryzen Threadripper 3970Xの仕様書; さらに一般的な仕様、もクリックすること](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html)
 - [AMD CPU Google検索例](https://www.google.com/search?q=site%3Aamd.com+Ryzen+3970X)
 - [AMDのプロセッサの仕様のページ](https://www.amd.com/ja/products/specifications/processors.html)
-- [Intel CPU Google検索例](https://www.google.com/search?q=Intel(R)+Core(TM)+i5-9600+CPU+%40+3.10GHz+site%3Aintel.com))
+- [Intel CPU Google検索例](https://www.google.com/search?q=Intel(R)+Core(TM)+i5-9600+CPU+%40+3.10GHz+site%3Aintel.com)
 - [IntelのCore i5-9600の仕様のページ](https://www.intel.co.jp/content/www/jp/ja/products/sku/134900/intel-core-i59600-processor-9m-cache-up-to-4-60-ghz/specifications.html)
 
 ## 3. 理論性能の計算方法
