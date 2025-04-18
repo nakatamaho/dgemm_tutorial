@@ -30,25 +30,18 @@ $$
 ## DGEMM とは  
 BLAS (Basic Linear Algebra Subprograms) で定義される汎用倍精度行列乗算カーネル です。
 
-DGEMM の計算式は
+DGEMM の計算式で、このチュートリアルでつかうものは
 
 $$
-C \gets \alpha\,\mathrm{op}(A)\,\mathrm{op}(B) + \beta\,C
+C \gets \alpha\ * A * B + \beta\ * C
 $$
 
-で、Cでのインターフェースは
+です。
+ただ実際に提供されているものは、転置操作を指定しなければなりません。
 
-```c
-void dgemm_(const char* TRANSA, const char* TRANSB,
-            const int* M, const int* N, const int* K,
-            const double* ALPHA,
-            const double* A, const int* LDA,
-            const double* B, const int* LDB,
-            const double* BETA,
-            double* C, const int* LDC);
-```
-
-となってます。
+$$
+C \gets \alpha\ * \mathrm{op}(A) * \mathrm{op}(B) + \beta\ * C
+$$
 
 DGEMM における `op(A)` および `op(B)` は、行列に適用する演算を指定する引数です。  
 `TRANSA`／`TRANSB` の値で以下を選択できます:
@@ -71,3 +64,19 @@ $$
 \mathrm{op}(A) = A^{H}
 \quad(\text{実数行列では }A^{T}\text{ と同じ})
 $$
+
+さらに、先導次元(leading dimension)も指定しなければなりません。
+
+最終的にCでのインターフェースは
+
+```c
+void dgemm_(const char* TRANSA, const char* TRANSB,
+            const int* M, const int* N, const int* K,
+            const double* ALPHA,
+            const double* A, const int* LDA,
+            const double* B, const int* LDB,
+            const double* BETA,
+            double* C, const int* LDC);
+```
+
+となってます。
