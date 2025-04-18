@@ -20,7 +20,7 @@ Ryzen Threadripper 3970X の主要なスペックは以下の通りです。
 
 ## 3. Ryzen Threadripper 3970X の基本スペックの調べ方
 
-最も正確に基本スペックを確認するには、CPUの製造元が提供している公式カタログ（一次情報）を参照するのが確実です。なお、Linux環境では、CPUの型番を含む情報は /proc/cpuinfo に記載されています。以下のコマンドをターミナルで実行することで、確認できます：
+まずは CPU の性能を正確に把握しましょう。使っているマシンに搭載されている CPU の型番は、Linux 環境であれば /proc/cpuinfo から確認できます。ターミナルで以下のコマンドを実行してください：
 ```bash
 cat /proc/cpuinfo | grep 'model name' | uniq
 ```
@@ -29,14 +29,13 @@ cat /proc/cpuinfo | grep 'model name' | uniq
 $ cat /proc/cpuinfo | grep 'model name' | uniq
 model name      : AMD Ryzen Threadripper 3970X 32-Core Processor
 ```
-なお手持ちのIntelのマシンでも
-```
+なお、別の Intel 製マシンでも同様に CPU モデルを確認できました。
+```bash
 $ cat /proc/cpuinfo | grep 'model name' | uniq
 model name      : Intel(R) Core(TM) i5-9600 CPU @ 3.10GHz
-```
-が得られました。
-このように取得したCPUの型番をもとに、公式情報を検索すると、より正確なスペックにたどり着けます。
-検索の際には、型番に加えて site:amd.com や site:intel.com などを指定することで、製造元の公式ページがヒットしやすくなります。
+
+取得したモデル名をもとに、AMD や Intel の公式サイトに掲載されている製品カタログ（一次情報）を参照すれば、CPU の基本仕様を正確に把握できます。製品カタログは検索エンジンで容易に入手可能です。検索時にはモデル名とともに `site:amd.com` や `site:intel.com` といったサイト指定オプションを付け、必ず製造元の公式ページから情報を取得してください。
+
 - [AMD CPU Google検索例](https://www.google.com/search?q=site%3Aamd.com+Ryzen+3970X)
 - [AMDのプロセッサの仕様のページ](https://www.amd.com/ja/products/specifications/processors.html)
 - [Intel CPU Google検索例](https://www.google.com/search?q=Intel(R)+Core(TM)+i5-9600+CPU+%2540+3.10GHz+site%253Aintel.com)
