@@ -46,6 +46,7 @@ void dgemm_(const char* TRANSA, const char* TRANSB,
             const double* B, const int* LDB,
             const double* BETA,
             double* C, const int* LDC);
+```
 
 となってます。
 
