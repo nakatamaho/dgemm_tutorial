@@ -28,9 +28,15 @@ $$
 > **つまり**：行列乗算を高速化できれば、数値計算の多くがその恩恵を受ける。
 
 ## DGEMM とは  
+BLAS (Basic Linear Algebra Subprograms) で定義される汎用倍精度行列乗算カーネル です。
 
-BLAS (Basic Linear Algebra Subprograms) で定義される汎用 **倍精度行列乗算カーネル** です。  
-インターフェースは
+DGEMM の計算式は
+
+$$
+C \gets \alpha\,\mathrm{op}(A)\,\mathrm{op}(B) + \beta\,C
+$$
+
+で、Cでのインターフェースは
 
 ```c
 void dgemm_(const char* TRANSA, const char* TRANSB,
@@ -40,3 +46,21 @@ void dgemm_(const char* TRANSA, const char* TRANSB,
             const double* B, const int* LDB,
             const double* BETA,
             double* C, const int* LDC);
+
+となってます。
+
+DGEMM における `op(A)` および `op(B)` は、行列に適用する演算を指定する引数です。  
+`TRANSA`／`TRANSB` の値で以下を選択できます:
+
+- `N` (No transpose):  
+  $$
+    \mathrm{op}(A) = A
+  $$
+- `T` (Transpose):  
+  $$
+    \mathrm{op}(A) = A^{T}
+  $$
+- `C` (Conjugate transpose):  
+  $$
+    \mathrm{op}(A) = A^{H} \quad(\text{実数行列では }A^{T}\text{ と同じ})
+  $$
