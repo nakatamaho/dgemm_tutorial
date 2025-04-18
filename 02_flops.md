@@ -37,6 +37,7 @@ model name      : Intel(R) Core(TM) i5-9600 CPU @ 3.10GHz
 
 取得したモデル名をもとに、AMD や Intel の公式サイトに掲載されている製品カタログ（一次情報）を参照すれば、CPU の基本仕様を正確に把握できます。製品カタログは検索エンジンで容易に入手可能です。検索時にはモデル名とともに `site:amd.com` や `site:intel.com` といったサイト指定オプションを付け、必ず製造元の公式ページから情報を取得してください。
 
+- [AMD Ryzen Threadripper 3970Xの仕様書; さらに一般的な仕様、もクリックすること](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html)
 - [AMD CPU Google検索例](https://www.google.com/search?q=site%3Aamd.com+Ryzen+3970X)
 - [AMDのプロセッサの仕様のページ](https://www.amd.com/ja/products/specifications/processors.html)
 - [Intel CPU Google検索例](https://www.google.com/search?q=Intel(R)+Core(TM)+i5-9600+CPU+%2540+3.10GHz+site%253Aintel.com)
