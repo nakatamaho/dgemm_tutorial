@@ -3,7 +3,7 @@
 Ryzen Threadripper 3970X の理論性能（theoretical peak performance）の計算方法を解説します。理論性能は、コンピュータやプロセッサ、スーパーコンピュータなどが理想的な条件下で達成可能な最大の計算性能を指します。これは一般に FLOPS（Floating Point Operations Per Second：毎秒浮動小数点演算回数）という単位で表されます。
 なお、ここでの計算はあくまで**理論上のピーク値**であり、実際のアプリケーションでの性能は違う場合が多々あることに注意してください。
 
-## 1. FLOP と FLOPS の違い
+## 1. FLOP と FLOPS
 
 **FLOP (Floating Point Operation)** は一回の浮動小数点演算を表す単位です。例えば、`a + b`のような加算や`a × b`のような乗算がそれぞれ1 FLOPに相当します。
 
