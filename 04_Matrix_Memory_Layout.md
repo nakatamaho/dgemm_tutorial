@@ -84,17 +84,19 @@ $C = A \times B$ という行列積において、$A$ が $m \times k$ 行列、
 
 $$C_{ij} = \sum_{p=0}^{k-1} A_{ip} \times B_{pj}$$
 
-## C言語による基本実装（二次元配列版）
+## Matrix Memory Layout and Data Handling
+
+## C言語による基本実装（一次元配列版）
 
 ```c
 #include <stdio.h>
 #include <stdlib.h>
 
 // 行列の表示関数
-void print_matrix(double **matrix, int rows, int cols) {
+void print_matrix(double *matrix, int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            printf("%.2f\t", matrix[i][j]);
+            printf("%.2f\t", matrix[i * cols + j]);
         }
         printf("\n");
     }
@@ -102,7 +104,7 @@ void print_matrix(double **matrix, int rows, int cols) {
 }
 
 // 行列積を計算する関数
-void matrix_multiply(double **A, double **B, double **C, int m, int n, int k) {
+void matrix_multiply(double *A, double *B, double *C, int m, int n, int k) {
     // A: m x k行列
     // B: k x n行列
     // C: m x n行列（結果）
@@ -110,7 +112,7 @@ void matrix_multiply(double **A, double **B, double **C, int m, int n, int k) {
     // 結果行列Cを0で初期化
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
-            C[i][j] = 0.0;
+            C[i * n + j] = 0.0;
         }
     }
     
@@ -118,7 +120,7 @@ void matrix_multiply(double **A, double **B, double **C, int m, int n, int k) {
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
             for (int p = 0; p < k; p++) {
-                C[i][j] += A[i][p] * B[p][j];
+                C[i * n + j] += A[i * k + p] * B[p * n + j];
             }
         }
     }
@@ -130,30 +132,19 @@ int main() {
     int k = 2; // 行列Aの列数、行列Bの行数
     int n = 4; // 行列Bの列数
     
-    // 行列のメモリ確保
-    double **A = (double **)malloc(m * sizeof(double *));
-    for (int i = 0; i < m; i++) {
-        A[i] = (double *)malloc(k * sizeof(double));
-    }
+    // 行列のメモリ確保（連続した領域を一度に確保）
+    double *A = (double *)malloc(m * k * sizeof(double));
+    double *B = (double *)malloc(k * n * sizeof(double));
+    double *C = (double *)malloc(m * n * sizeof(double));
     
-    double **B = (double **)malloc(k * sizeof(double *));
-    for (int i = 0; i < k; i++) {
-        B[i] = (double *)malloc(n * sizeof(double));
-    }
+    // 行列Aの初期化（行優先）
+    A[0 * k + 0] = 1.0; A[0 * k + 1] = 2.0;
+    A[1 * k + 0] = 3.0; A[1 * k + 1] = 4.0;
+    A[2 * k + 0] = 5.0; A[2 * k + 1] = 6.0;
     
-    double **C = (double **)malloc(m * sizeof(double *));
-    for (int i = 0; i < m; i++) {
-        C[i] = (double *)malloc(n * sizeof(double));
-    }
-    
-    // 行列Aの初期化
-    A[0][0] = 1.0; A[0][1] = 2.0;
-    A[1][0] = 3.0; A[1][1] = 4.0;
-    A[2][0] = 5.0; A[2][1] = 6.0;
-    
-    // 行列Bの初期化
-    B[0][0] = 1.0; B[0][1] = 2.0; B[0][2] = 3.0; B[0][3] = 4.0;
-    B[1][0] = 5.0; B[1][1] = 6.0; B[1][2] = 7.0; B[1][3] = 8.0;
+    // 行列Bの初期化（行優先）
+    B[0 * n + 0] = 1.0; B[0 * n + 1] = 2.0; B[0 * n + 2] = 3.0; B[0 * n + 3] = 4.0;
+    B[1 * n + 0] = 5.0; B[1 * n + 1] = 6.0; B[1 * n + 2] = 7.0; B[1 * n + 3] = 8.0;
     
     printf("行列 A (%dx%d):\n", m, k);
     print_matrix(A, m, k);
@@ -167,26 +158,21 @@ int main() {
     printf("行列 C = A x B (%dx%d):\n", m, n);
     print_matrix(C, m, n);
     
-    // メモリ解放
-    for (int i = 0; i < m; i++) {
-        free(A[i]);
-    }
+    // メモリ解放（一度に解放できる）
     free(A);
-    
-    for (int i = 0; i < k; i++) {
-        free(B[i]);
-    }
     free(B);
-    
-    for (int i = 0; i < m; i++) {
-        free(C[i]);
-    }
     free(C);
     
     return 0;
 }
 ```
 
-このプログラムでは、行列を二次元配列として表現しています。各要素には `matrix[i][j]` のようにアクセスできます。これにより、コードが数学的な表記により近く、直感的になります。
+このプログラムでは、前のセクションで説明した通り、行列を一次元配列としてメモリに格納しています。行優先（Row-Major）形式を使用し、要素 $(i,j)$ へのアクセスには `matrix[i * cols + j]` という計算式を使用しています。
 
-上記の実装は教育目的の基本的なものであり、実用的な行列計算ではBLASやLAPACKなどの最適化されたライブラリを使用することが推奨されます。
+この実装には以下の利点があります：
+
+1. **メモリ効率**：連続したメモリブロックを一度に確保するため、キャッシュの効率が良くなります。
+2. **シンプルなメモリ管理**：確保と解放が簡単です。
+3. **高速なアクセス**：間接参照がなくなり、配列要素へのアクセスが高速になります。
+
+一次元配列を使った実装は直感的ではないかもしれませんが、高性能な行列計算アルゴリズムではほぼ必須の手法です。実際、BLAS/LAPACKなどの線形代数ライブラリも内部的には一次元配列を使用しています。
