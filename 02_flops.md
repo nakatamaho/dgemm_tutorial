@@ -100,22 +100,22 @@ CPU の理論演算性能を評価する際には、以下３つの要素を組�
    - FMA パイプライン数：2 本 ⇒ 8 FLOP × 2 = **16 FLOP/サイクル**
 
 2. **理論 FLOPS の式**  
-   \[
-   \text{FLOPS}
-   = (\text{コア数}) \times (\text{FLOP/サイクル}) \times (\text{クロック周波数})
-   \]
+   $$
+   \mathrm{FLOPS}
+   = (\text{コア数}) \times (\mathrm{FLOP/サイクル}) \times (\text{クロック周波数})
+   $$
 
 3. **数値代入**  
    - コア数：32  
-   - クロック周波数：3.7 GHz = \(3.7 \times 10^9\) サイクル/秒  
+   - クロック周波数：3.7 GHz = $3.7\times10^9$ サイクル/秒  
    - FLOP/サイクル：16  
 
-   \[
+   $$
    32 \times 16 \times 3.7 \times 10^9
    = 512 \times 3.7 \times 10^9
-   = 1.8944 \times 10^{12}\,\text{FLOPS}
-   \approx 1.89\,\text{TFLOPS}
-   \]
+   = 1.8944 \times 10^{12}\,\mathrm{FLOPS}
+   \approx 1.89\,\mathrm{TFLOPS}
+   $$
 
 #### (2) 単精度演算の場合（32 bit）
 
@@ -128,12 +128,13 @@ CPU の理論演算性能を評価する際には、以下３つの要素を組�
    - クロック周波数：3.7 GHz  
    - FLOP/サイクル：32  
 
-   \[
+   $$
    32 \times 32 \times 3.7 \times 10^9
    = 1024 \times 3.7 \times 10^9
-   = 3.7888 \times 10^{12}\,\text{FLOPS}
-   \approx 3.79\,\text{TFLOPS}
-   \]
+   = 3.7888 \times 10^{12}\,\mathrm{FLOPS}
+   \approx 3.79\,\mathrm{TFLOPS}
+   $$
+
 
 
 ## 5. 注意点と実際の性能
