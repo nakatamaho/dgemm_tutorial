@@ -11,12 +11,15 @@ Ryzen Threadripper 3970X の理論性能（theoretical peak performance）の計
 ## 2. Ryzen Threadripper 3970X の基本スペック
 
 Ryzen Threadripper 3970X の主要なスペックは以下の通りです。
-- [AMDの公式プロセッサの仕様ページ](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html) さらに一般的な仕様をクリック
-- [Passmarkのページ](https://www.cpubenchmark.net/cpu.php?cpu=AMD+Ryzen+Threadripper+3970X)
 - **コア数**：32 コア  
 - **スレッド数**：64 スレッド  
 - **基本クロック周波数**：約 3.7 GHz ターボ時は4.5GHz  
 - **SIMD 命令セット**：AVX2 をサポート（256ビット幅）
+- **L1 キャッシュ**:2048 KB
+- **L2 キャッシュ**:16 MB
+- **L3 キャッシュ**:128 MB
+- [AMDの公式プロセッサの仕様ページ](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html) さらに一般的な仕様をクリック
+- [Passmarkのページ](https://www.cpubenchmark.net/cpu.php?cpu=AMD+Ryzen+Threadripper+3970X)
 
 ## 3. Ryzen Threadripper 3970X の基本スペックの調べ方
 
