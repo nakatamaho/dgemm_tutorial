@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Matrix cells with leading dimension -->
+  <g transform="translate(150, 100)">
+    <!-- Leading Dimension Brace -->
+    <path d="M-20,0 Q-35,175 -20,350" stroke="black" stroke-width="2" fill="none"/>
+    <text x="-45" y="175" transform="rotate(-90, -45, 175)" text-anchor="middle" font-family="Arial" font-size="18">Leading Dimension</text>
+    
+    <!-- Empty cells (row 0) -->
+    <rect x="0" y="0" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="50" y="0" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="100" y="0" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="150" y="0" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="200" y="0" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="250" y="0" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="300" y="0" width="40" height="40" fill="none" stroke="gray"/>
+
+    <!-- Empty cells (row 1) -->
+    <rect x="0" y="50" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="50" y="50" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="100" y="50" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="150" y="50" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="200" y="50" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="250" y="50" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="300" y="50" width="40" height="40" fill="none" stroke="gray"/>
+
+    <!-- Row 2 -->
+    <rect x="0" y="100" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="50" y="100" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="100" y="100" width="40" height="40" fill="#c6e2ff" stroke="gray"/>
+    <rect x="150" y="100" width="40" height="40" fill="#b3d9ff" stroke="gray"/>
+    <rect x="200" y="100" width="40" height="40" fill="#a3d1ff" stroke="gray"/>
+    <rect x="250" y="100" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="300" y="100" width="40" height="40" fill="none" stroke="gray"/>
+
+    <!-- Row 3 -->
+    <rect x="0" y="150" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="50" y="150" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="100" y="150" width="40" height="40" fill="#9dcaff" stroke="gray"/>
+    <rect x="150" y="150" width="40" height="40" fill="#80b3ff" stroke="gray"/>
+    <rect x="200" y="150" width="40" height="40" fill="#66a3ff" stroke="gray"/>
+    <rect x="250" y="150" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="300" y="150" width="40" height="40" fill="none" stroke="gray"/>
+
+    <!-- Row 4 -->
+    <rect x="0" y="200" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="50" y="200" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="100" y="200" width="40" height="40" fill="#4d94ff" stroke="gray"/>
+    <rect x="150" y="200" width="40" height="40" fill="#3385ff" stroke="gray"/>
+    <rect x="200" y="200" width="40" height="40" fill="#1a75ff" stroke="gray"/>
+    <rect x="250" y="200" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="300" y="200" width="40" height="40" fill="none" stroke="gray"/>
+
+    <!-- Empty cells (row 5) -->
+    <rect x="0" y="250" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="50" y="250" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="100" y="250" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="150" y="250" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="200" y="250" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="250" y="250" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="300" y="250" width="40" height="40" fill="none" stroke="gray"/>
+
+    <!-- Empty cells (row 6) -->
+    <rect x="0" y="300" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="50" y="300" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="100" y="300" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="150" y="300" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="200" y="300" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="250" y="300" width="40" height="40" fill="none" stroke="gray"/>
+    <rect x="300" y="300" width="40" height="40" fill="none" stroke="gray"/>
+
+    <!-- Values -->
+    <text x="120" y="125" text-anchor="middle" font-family="Arial" font-size="18">9</text>
+    <text x="170" y="125" text-anchor="middle" font-family="Arial" font-size="18">16</text>
+    <text x="220" y="125" text-anchor="middle" font-family="Arial" font-size="18">21</text>
+    
+    <text x="120" y="175" text-anchor="middle" font-family="Arial" font-size="18">30</text>
+    <text x="170" y="175" text-anchor="middle" font-family="Arial" font-size="18">39</text>
+    <text x="220" y="175" text-anchor="middle" font-family="Arial" font-size="18">48</text>
+    
+    <text x="120" y="225" text-anchor="middle" font-family="Arial" font-size="18">51</text>
+    <text x="170" y="225" text-anchor="middle" font-family="Arial" font-size="18">62</text>
+    <text x="220" y="225" text-anchor="middle" font-family="Arial" font-size="18">73</text>
+    
+    <!-- Column-major access pattern with arrows -->
+    <!-- First column: 9-30-51 -->
+    <path d="M120 130 L120 150" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+    <path d="M120 150 L115 145 L120 150 L125 145" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+    
+    <path d="M120 180 L120 200" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+    <path d="M120 200 L115 195 L120 200 L125 195" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+    
+    <!-- Second column: 16-39-62 -->
+    <path d="M170 130 L170 150" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+    <path d="M170 150 L165 145 L170 150 L175 145" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+    
+    <path d="M170 180 L170 200" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+    <path d="M170 200 L165 195 L170 200 L175 195" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+    
+    <!-- Third column: 21-48-73 -->
+    <path d="M220 130 L220 150" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+    <path d="M220 150 L215 145 L220 150 L225 145" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+    
+    <path d="M220 180 L220 200" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+    <path d="M220 200 L215 195 L220 200 L225 195" stroke="#ff4d4d" stroke-width="2" fill="none"/>
+  </g>
+</svg>
