@@ -113,7 +113,7 @@ $$
 $$
    32 \times 16 \times 3.7 \times 10^9
    = 512 \times 3.7 \times 10^9
-   = 1.8944 \times 10^{12}\,\mathrm{FLOPS}
+   = 1.8944 \times 10^{12}\mathrm{FLOPS}
    \approx 1.89 \mathrm{TFLOPS}
 $$
 
