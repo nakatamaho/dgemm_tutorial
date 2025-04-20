@@ -89,35 +89,35 @@ int index_col_major(int i, int j, int n_rows) {
 #include <stdio.h>
 #include <stdlib.h>
 
-// 行列の表示関数
+// 行列の表示関数（列優先）
 void print_matrix(double *matrix, int rows, int cols) {
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
-            printf("%.2f\t", matrix[i * cols + j]);
+            printf("%.2f\t", matrix[i + j * rows]);
         }
         printf("\n");
     }
     printf("\n");
 }
 
-// 行列積を計算する関数
+// 行列積（列優先）: C = A × B
 void matrix_multiply(double *A, double *B, double *C, int m, int n, int k) {
-    // A: m x k行列
-    // B: k x n行列
-    // C: m x n行列（結果）
-    
-    // 結果行列Cを0で初期化
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
-            C[i * n + j] = 0.0;
+    // A: m x k（列優先）
+    // B: k x n（列優先）
+    // C: m x n（列優先）
+
+    // Cを0で初期化
+    for (int j = 0; j < n; j++) {
+        for (int i = 0; i < m; i++) {
+            C[i + j * m] = 0.0;
         }
     }
-    
-    // 行列積の計算
-    for (int i = 0; i < m; i++) {
-        for (int j = 0; j < n; j++) {
-            for (int p = 0; p < k; p++) {
-                C[i * n + j] += A[i * k + p] * B[p * n + j];
+
+    // C(i,j) += A(i,p) * B(p,j)
+    for (int j = 0; j < n; j++) {
+        for (int p = 0; p < k; p++) {
+            for (int i = 0; i < m; i++) {
+                C[i + j * m] += A[i + p * m] * B[p + j * k];
             }
         }
     }
@@ -125,41 +125,38 @@ void matrix_multiply(double *A, double *B, double *C, int m, int n, int k) {
 
 // 使用例
 int main() {
-    int m = 3; // 行列Aの行数
-    int k = 2; // 行列Aの列数、行列Bの行数
-    int n = 4; // 行列Bの列数
-    
-    // 行列のメモリ確保（連続した領域を一度に確保）
-    double *A = (double *)malloc(m * k * sizeof(double));
-    double *B = (double *)malloc(k * n * sizeof(double));
-    double *C = (double *)malloc(m * n * sizeof(double));
-    
-    // 行列Aの初期化（行優先）
-    A[0 * k + 0] = 1.0; A[0 * k + 1] = 2.0;
-    A[1 * k + 0] = 3.0; A[1 * k + 1] = 4.0;
-    A[2 * k + 0] = 5.0; A[2 * k + 1] = 6.0;
-    
-    // 行列Bの初期化（行優先）
-    B[0 * n + 0] = 1.0; B[0 * n + 1] = 2.0; B[0 * n + 2] = 3.0; B[0 * n + 3] = 4.0;
-    B[1 * n + 0] = 5.0; B[1 * n + 1] = 6.0; B[1 * n + 2] = 7.0; B[1 * n + 3] = 8.0;
-    
+    int m = 3; // Aの行数
+    int k = 2; // Aの列数 = Bの行数
+    int n = 4; // Bの列数
+
+    double *A = (double *)malloc(m * k * sizeof(double)); // m×k
+    double *B = (double *)malloc(k * n * sizeof(double)); // k×n
+    double *C = (double *)malloc(m * n * sizeof(double)); // m×n
+
+    // 行列Aの初期化（列優先）
+    A[0 + 0 * m] = 1.0; A[1 + 0 * m] = 3.0; A[2 + 0 * m] = 5.0;
+    A[0 + 1 * m] = 2.0; A[1 + 1 * m] = 4.0; A[2 + 1 * m] = 6.0;
+
+    // 行列Bの初期化（列優先）
+    B[0 + 0 * k] = 1.0; B[1 + 0 * k] = 5.0;
+    B[0 + 1 * k] = 2.0; B[1 + 1 * k] = 6.0;
+    B[0 + 2 * k] = 3.0; B[1 + 2 * k] = 7.0;
+    B[0 + 3 * k] = 4.0; B[1 + 3 * k] = 8.0;
+
     printf("行列 A (%dx%d):\n", m, k);
     print_matrix(A, m, k);
-    
+
     printf("行列 B (%dx%d):\n", k, n);
     print_matrix(B, k, n);
-    
-    // 行列積の計算
+
     matrix_multiply(A, B, C, m, n, k);
-    
+
     printf("行列 C = A x B (%dx%d):\n", m, n);
     print_matrix(C, m, n);
-    
-    // メモリ解放（一度に解放できる）
+
     free(A);
     free(B);
     free(C);
-    
     return 0;
 }
 ```
