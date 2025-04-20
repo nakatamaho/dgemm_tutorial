@@ -40,7 +40,9 @@ model name      : Intel(R) Core(TM) i5-9600 CPU @ 3.10GHz
 - [AMD Ryzen Threadripper 3970Xの仕様書](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html)（「さらに一般的な仕様」もクリックすること）
 - [AMDのプロセッサの仕様のページ](https://www.amd.com/ja/products/specifications/processors.html)
 - [IntelのCore i5-9600の仕様のページ](https://www.intel.co.jp/content/www/jp/ja/products/sku/134900/intel-core-i59600-processor-9m-cache-up-to-4-60-ghz/specifications.html)
-
+-  [AMD CPU仕様 Google検索例](https://www.google.com/search?q=site%3Aamd.com+Ryzen+3970X)
+-  [Intel CPU仕様 Google検索例](https://www.google.com/search?q=Intel(R)+Core(TM)+i5-9600+CPU+%40+3.10GHz+site%3Aintel.com)
+  
 ## 3. Ryzen Threadripper 3970X の基本スペック
 
 Ryzen Threadripper 3970X の基本スペックは以下のようになります。
@@ -99,7 +101,7 @@ CPU の理論演算性能を評価する際には、以下３つの要素を組�
 > - FMA 以外の単独乗算／加算命令では、理論値の半分程度となる場合があります。  
 > - 実際の命令セットサポート状況やパイプライン構成の詳細は、AMD 社公式ドキュメントを参照すべきですが、正しい情報を得るのはかなり面倒です。また非常に専門的になっていて、必要な情報がわかりにくい場合もあります。
 > - [WikiChip](https://fuse.wikichip.org/news/2458/a-look-at-the-amd-zen-2-core/2/) のような解説サイトは詳細な情報が得られる参考資料となります。
-> - 参考資料として検索エンジンや専門サイトを活用するのも効果的な方法です。
+> - ChatGPTなどで、WebSearchをonにして[下調べ](https://chatgpt.com/share/680467fd-acd8-800e-a567-e7e7f13b9f74)してから[解説サイト](https://fuse.wikichip.org/news/2458/a-look-at-the-amd-zen-2-core/2/) を読むとよいでしょう。
 
 ## 5. Ryzen Threadripper 3970X の理論 FLOPS 計算例
 
@@ -157,3 +159,4 @@ Ryzen Threadripper 3970X の理論 FLOPS は、**倍精度**で約 **1.89 TFLOPS
 
 このように、理論性能の計算は非常にシンプルな数式で表せますが、実際にその性能を引き出すのはまた別の技術と工夫が必要となります。  
 CPU や GPU の性能評価を行う際は、ベンチマークテストなど実際の計測も重要な情報となります。
+
