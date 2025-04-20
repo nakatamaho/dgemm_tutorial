@@ -10,16 +10,15 @@ Ryzen Threadripper 3970X の理論性能（theoretical peak performance）の計
 
 ## 2. Ryzen Threadripper 3970X の基本スペック
 
-Ryzen Threadripper 3970X の主要なスペックは以下の通りです。
+Ryzen Threadripper 3970X のDGEMMに関連するスペックは以下の通りです。
 - **コア数**：32 コア  
 - **スレッド数**：64 スレッド  
-- **基本クロック周波数**：約 3.7 GHz ターボ時は4.5GHz  
+- **基本クロック周波数**：3.7 GHz ターボ時最大4.5GHz  
 - **SIMD 命令セット**：AVX2 をサポート（256ビット幅）
 - **L1 キャッシュ**:2048 KB
 - **L2 キャッシュ**:16 MB
 - **L3 キャッシュ**:128 MB
-- [AMDの公式プロセッサの仕様ページ](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html) さらに一般的な仕様をクリック
-- [Passmarkのページ](https://www.cpubenchmark.net/cpu.php?cpu=AMD+Ryzen+Threadripper+3970X)
+- [AMDの公式プロセッサの仕様ページ](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html) さらに一般的な仕様をクリック、から確認できます。
 
 ## 3. Ryzen Threadripper 3970X の基本スペックの調べ方
 
@@ -50,9 +49,9 @@ model name      : Intel(R) Core(TM) i5-9600 CPU @ 3.10GHz
 
 CPU の理論 FLOPS を計算する一般的な式は以下のようになります:
 
-\[
+$$
 \text{理論 FLOPS} = (\text{コア数}) \times (\text{サイクルあたりの演算回数}) \times (\text{クロック周波数})
-\]
+
 
 ここで、**「サイクルあたりの演算回数」** は、1 サイクルに各コアで実行可能な浮動小数点演算数を意味します。  
 現代の CPU では、**FMA (Fused Multiply-Add)** 命令により、1 命令で 2 回の浮動小数点演算（乗算と加算）が同時に実行可能です。
@@ -77,13 +76,13 @@ Ryzen Threadripper 3970X の AVX2 命令セット（256 ビット）の場合、
 
 - **コア数**：32  
 - **クロック周波数**：3.7 GHz = \( 3.7 \times 10^9 \) サイクル/秒  
-- **サイクルあたりの FLOP**：8 (倍精度の場合)
+- **サイクルあたりの FLOP**：16 (倍精度の場合)
 
 計算すると、
 
-\[
-\text{理論 FLOPS}_{\text{倍精度}} = 32 \times 8 \times 3.7 \times 10^9
-\]
+$$
+\text{理論 FLOPS}_{\text{倍精度}} = 32 \times 16 \times 5.12 \times 10^9
+$$
 
 まず、32 × 8 = 256  
 次に、256 × 3.7 = 947.2
