@@ -136,11 +136,8 @@ void matrix_multiply_good(double* A, double* B, double* C,
         for (int j = 0; j < n; j++) {
             double sum = 0.0;
             for (int k = 0; k < n; k++) {
-                // 先導次元を使って正確なメモリ位置を計算（列優先方式）
-                int idxA = i + k * lda;
-                int idxB = k + j * ldb;
-                int idxC = i + j * ldc;
-                sum += A[idxA] * B[idxB];
+                // 先導次元を使って直接メモリ位置を計算（列優先方式）
+                sum += A[i + k * lda] * B[k + j * ldb];
             }
             C[i + j * ldc] = sum;
         }
