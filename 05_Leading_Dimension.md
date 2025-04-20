@@ -90,7 +90,7 @@ void dgemm_(char *transa, char *transb, int *m, int *n, int *k,
 
 ここで `lda`, `ldb`, `ldc` が各行列の先導次元を表します。これにより、実際に計算に使用する部分行列のサイズ（`m`, `n`, `k`）と、メモリ上での配置（`lda`, `ldb`, `ldc`）を別々に指定できます。
 
-### 先導次元の実際の意味
+## 先導次元の実際の意味
 
 上の例において、実際に計算に使用する行列は3×3ですが、メモリ上では7×7の行列の一部として存在しています。このとき：
 
@@ -99,16 +99,16 @@ void dgemm_(char *transa, char *transb, int *m, int *n, int *k,
 - **先導次元(LD)**: 7
 
 例えば、中央の3×3部分行列の左上要素（値1）は、7×7行列内では位置(2,2)にあります。列優先のメモリレイアウトでは、この要素のメモリ位置は：
-$\text{baseAddress} + 2 + 2 \times \text{LD} = \text{baseAddress} + 2 + 2 \times 7 = \text{baseAddress} + 16$
+$2 + 2 \times \text{LD} = 2 + 2 \times 7 = 16$
 
 さらに、次の列の同じ行の要素（値2）へアクセスするには：
-$\text{baseAddress} + 2 + 3 \times \text{LD} = \text{baseAddress} + 2 + 3 \times 7 = \text{baseAddress} + 23$
+$2 + 3 \times \text{LD} = 2 + 3 \times 7 = 23$
 
 となります。
 
 先導次元は次の2つの目的で使用されます：
 
-1. **メモリアクセスの計算**: 列優先方式では、行列の任意の要素(i,j)にアクセスする際、そのメモリ位置は `baseAddress + i + j * LD` と計算されます
+1. **メモリアクセスの計算**: 列優先方式では、行列の任意の要素(i,j)にアクセスする際、そのメモリ位置は `i + j * LD` と計算されます
 2. **パディングの許可**: メモリアライメントのために行列の各列の末尾に余分なスペース（パディング）を追加できます
 
 ## 実装例
@@ -131,19 +131,18 @@ void matrix_multiply_bad(double* A, double* B, double* C, int n) {
 
 // 良い例: 先導次元を明示的に指定し、部分行列の乗算が可能
 void matrix_multiply_good(double* A, double* B, double* C, 
-                         int n, int lda, int ldb, int ldc,
-                         int offsetA, int offsetB, int offsetC) {
+                         int n, int lda, int ldb, int ldc) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             double sum = 0.0;
             for (int k = 0; k < n; k++) {
                 // 先導次元を使って正確なメモリ位置を計算（列優先方式）
-                int idxA = offsetA + i + k * lda;
-                int idxB = offsetB + k + j * ldb;
-                int idxC = offsetC + i + j * ldc;
+                int idxA = i + k * lda;
+                int idxB = k + j * ldb;
+                int idxC = i + j * ldc;
                 sum += A[idxA] * B[idxB];
             }
-            C[offsetC + i + j * ldc] = sum;
+            C[i + j * ldc] = sum;
         }
     }
 }
@@ -155,9 +154,14 @@ void matrix_multiply_good(double* A, double* B, double* C,
 // 7x7行列内の3x3部分行列を乗算
 int n = 3;      // 部分行列のサイズ
 int ld = 7;     // 先導次元（7x7行列の高さ）
-int offset = 2 + 2 * ld; // 部分行列の左上要素の位置 (2,2)、列優先方式
 
-matrix_multiply_good(A, B, C, n, ld, ld, ld, offset, offset, offset);
+// 部分行列の左上要素の位置 (2,2) へのポインタを計算
+double* subA = &A[2 + 2 * ld];
+double* subB = &B[2 + 2 * ld];
+double* subC = &C[2 + 2 * ld];
+
+// 関数呼び出し
+matrix_multiply_good(subA, subB, subC, n, ld, ld, ld);
 ```
 
 ## DGEMMにおける先導次元の実装例
@@ -168,22 +172,16 @@ DGEMM関数を使って部分行列同士の積を計算する場合：
 // 大きな行列内の部分行列同士の乗算（DGEMM使用）
 void multiply_submatrix_dgemm(double* A, double* B, double* C,
                              int m, int n, int k,     // 部分行列のサイズ
-                             int lda, int ldb, int ldc, // 先導次元
-                             int offsetA, int offsetB, int offsetC) // オフセット
+                             int lda, int ldb, int ldc) // 先導次元
 {
     char transa = 'N';
     char transb = 'N';
     double alpha = 1.0;
     double beta = 0.0;
     
-    // 部分行列のポインタを計算
-    double* subA = &A[offsetA];
-    double* subB = &B[offsetB];
-    double* subC = &C[offsetC];
-    
     // DGEMMを呼び出し
     dgemm_(&transa, &transb, &m, &n, &k, &alpha,
-          subA, &lda, subB, &ldb, &beta, subC, &ldc);
+          A, &lda, B, &ldb, &beta, C, &ldc);
 }
 ```
 
@@ -193,9 +191,14 @@ void multiply_submatrix_dgemm(double* A, double* B, double* C,
 // 7x7行列内の3x3部分行列を乗算
 int m = 3, n = 3, k = 3;  // 部分行列のサイズ
 int lda = 7, ldb = 7, ldc = 7;  // 先導次元
-int offset = 2 + 2 * lda;  // 部分行列の開始位置 (2,2)、列優先方式
 
-multiply_submatrix_dgemm(A, B, C, m, n, k, lda, ldb, ldc, offset, offset, offset);
+// 部分行列の左上要素の位置 (2,2) へのポインタを計算
+double* subA = &A[2 + 2 * lda];
+double* subB = &B[2 + 2 * lda];
+double* subC = &C[2 + 2 * lda];
+
+// 関数呼び出し
+multiply_submatrix_dgemm(subA, subB, subC, m, n, k, lda, ldb, ldc);
 ```
 
 ## 最後に
