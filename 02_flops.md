@@ -10,7 +10,7 @@ Ryzen Threadripper 3970X の理論性能（theoretical peak performance）の計
 
 ## 2. Ryzen Threadripper 3970X の基本スペック
 
-Ryzen Threadripper 3970X のDGEMMに関連するスペックは主に以下の通りです。
+Ryzen Threadripper 3970X のDGEMMに主に関連するスペックを抜き出してみると以下のようになります。
 - **コア数**：32 コア  
 - **スレッド数**：64 スレッド  
 - **基本クロック周波数**：3.7 GHz ターボ時最大4.5GHz  
