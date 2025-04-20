@@ -51,7 +51,7 @@ CPUはメモリからデータを読み込む際、必要な個所だけでな�
    
 ### なぜFORTRANの方が行列計算に適しているか
 FORTRANは二次元配列の考え方が言語仕様に入っているため、自然に行列を扱えます。FORTRANでは、列優先（Column-Major）のメモリレイアウトを使用します。以下のような利点があります。
-1. **部分行列へのアクセスが可能**: 特定の部分行列（サブマトリックス）を扱いたい場合、leading dimensionの考えがFORTRAN自身に組み込まれてるため、自然。
+1. **部分行列へのアクセスが可能**: 特定の部分行列（サブマトリックス）を扱いたい場合、leading dimensionの考えがFORTRAN自身に組み込まれてるため、自然。SIZEで二次元配列のleading dimesionわかります。
 2. **連続したメモリ割り当て**: FORTRANの二次元配列は連続したメモリ領域に割り当てられます。
 3. **BLAS/LAPACKとの互換性**: 線形代数の標準ライブラリであるBLAS（Basic Linear Algebra Subprograms）やLAPACK（Linear Algebra PACKage）はFORTRANで開発されており、FORTRANの仕様であるColumn-Majorを前提としています。
 
