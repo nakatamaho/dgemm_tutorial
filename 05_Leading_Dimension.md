@@ -30,6 +30,7 @@
 
 例えば、上記の例では7×7の行列の中から3×3の部分行列を取り出して計算しています。この時、各行の要素間の間隔は実際の列数（この場合は3）ではなく、元の行列の列数（この場合は7）となります。
 ![Column Major 行列のレイアウト](column_major.svg)
+
 行列計算ライブラリ（例：BLAS、LAPACK）では、関数呼び出し時に先導次元を指定する必要があります。
 
 例えば、DGEMM（Double-precision GEneral Matrix Multiplication）関数の場合：
