@@ -1,593 +1,109 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   viewBox="0 0 190.70677 161.73427"
-   version="1.1"
-   id="svg68"
-   sodipodi:docname="column_major.svg"
-   inkscape:version="1.4 (86a8ad7, 2024-10-11)"
-   width="190.70677"
-   height="161.73427"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <defs
-     id="defs68" />
-  <sodipodi:namedview
-     id="namedview68"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:zoom="2.0175"
-     inkscape:cx="196.77819"
-     inkscape:cy="208.17844"
-     inkscape:window-width="1329"
-     inkscape:window-height="1032"
-     inkscape:window-x="1989"
-     inkscape:window-y="99"
-     inkscape:window-maximized="0"
-     inkscape:current-layer="svg68" />
-  <!-- Matrix cells with leading dimension -->
-  <g
-     transform="matrix(0.47869995,0,0,0.46132631,27.709434,0.23066315)"
-     id="g68">
-    <!-- Leading Dimension Brace -->
-    <path
-       d="m -20,0 q -15,175 0,350"
-       stroke="#000000"
-       stroke-width="2"
-       fill="none"
-       id="path1" />
-    <text
-       x="-45"
-       y="175"
-       transform="rotate(-90,-45,175)"
-       text-anchor="middle"
-       font-family="Arial"
-       font-size="18px"
-       id="text1">Leading Dimension</text>
-    <!-- Empty cells (row 0) -->
-    <rect
-       x="0"
-       y="0"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect1" />
-    <rect
-       x="50"
-       y="0"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect2" />
-    <rect
-       x="100"
-       y="0"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect3" />
-    <rect
-       x="150"
-       y="0"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect4" />
-    <rect
-       x="200"
-       y="0"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect5" />
-    <rect
-       x="250"
-       y="0"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect6" />
-    <rect
-       x="300"
-       y="0"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect7" />
-    <!-- Empty cells (row 1) -->
-    <rect
-       x="0"
-       y="50"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect8" />
-    <rect
-       x="50"
-       y="50"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect9" />
-    <rect
-       x="100"
-       y="50"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect10" />
-    <rect
-       x="150"
-       y="50"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect11" />
-    <rect
-       x="200"
-       y="50"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect12" />
-    <rect
-       x="250"
-       y="50"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect13" />
-    <rect
-       x="300"
-       y="50"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect14" />
-    <!-- Row 2 -->
-    <rect
-       x="0"
-       y="100"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect15" />
-    <rect
-       x="50"
-       y="100"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect16" />
-    <rect
-       x="100"
-       y="100"
-       width="40"
-       height="40"
-       fill="#c6e2ff"
-       stroke="#808080"
-       id="rect17" />
-    <rect
-       x="150"
-       y="100"
-       width="40"
-       height="40"
-       fill="#b3d9ff"
-       stroke="#808080"
-       id="rect18" />
-    <rect
-       x="200"
-       y="100"
-       width="40"
-       height="40"
-       fill="#a3d1ff"
-       stroke="#808080"
-       id="rect19" />
-    <rect
-       x="250"
-       y="100"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect20" />
-    <rect
-       x="300"
-       y="100"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect21" />
-    <!-- Row 3 -->
-    <rect
-       x="0"
-       y="150"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect22" />
-    <rect
-       x="50"
-       y="150"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect23" />
-    <rect
-       x="100"
-       y="150"
-       width="40"
-       height="40"
-       fill="#9dcaff"
-       stroke="#808080"
-       id="rect24" />
-    <rect
-       x="150"
-       y="150"
-       width="40"
-       height="40"
-       fill="#80b3ff"
-       stroke="#808080"
-       id="rect25" />
-    <rect
-       x="200"
-       y="150"
-       width="40"
-       height="40"
-       fill="#66a3ff"
-       stroke="#808080"
-       id="rect26" />
-    <rect
-       x="250"
-       y="150"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect27" />
-    <rect
-       x="300"
-       y="150"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect28" />
-    <!-- Row 4 -->
-    <rect
-       x="0"
-       y="200"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect29" />
-    <rect
-       x="50"
-       y="200"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect30" />
-    <rect
-       x="100"
-       y="200"
-       width="40"
-       height="40"
-       fill="#4d94ff"
-       stroke="#808080"
-       id="rect31" />
-    <rect
-       x="150"
-       y="200"
-       width="40"
-       height="40"
-       fill="#3385ff"
-       stroke="#808080"
-       id="rect32" />
-    <rect
-       x="200"
-       y="200"
-       width="40"
-       height="40"
-       fill="#1a75ff"
-       stroke="#808080"
-       id="rect33" />
-    <rect
-       x="250"
-       y="200"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect34" />
-    <rect
-       x="300"
-       y="200"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect35" />
-    <!-- Empty cells (row 5) -->
-    <rect
-       x="0"
-       y="250"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect36" />
-    <rect
-       x="50"
-       y="250"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect37" />
-    <rect
-       x="100"
-       y="250"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect38" />
-    <rect
-       x="150"
-       y="250"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect39" />
-    <rect
-       x="200"
-       y="250"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect40" />
-    <rect
-       x="250"
-       y="250"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect41" />
-    <rect
-       x="300"
-       y="250"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect42" />
-    <!-- Empty cells (row 6) -->
-    <rect
-       x="0"
-       y="300"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect43" />
-    <rect
-       x="50"
-       y="300"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect44" />
-    <rect
-       x="100"
-       y="300"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect45" />
-    <rect
-       x="150"
-       y="300"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect46" />
-    <rect
-       x="200"
-       y="300"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect47" />
-    <rect
-       x="250"
-       y="300"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect48" />
-    <rect
-       x="300"
-       y="300"
-       width="40"
-       height="40"
-       fill="none"
-       stroke="#808080"
-       id="rect49" />
-    <!-- Values -->
-    <text
-       x="120"
-       y="125"
-       text-anchor="middle"
-       font-family="Arial"
-       font-size="18px"
-       id="text49">9</text>
-    <text
-       x="170"
-       y="125"
-       text-anchor="middle"
-       font-family="Arial"
-       font-size="18px"
-       id="text50">16</text>
-    <text
-       x="220"
-       y="125"
-       text-anchor="middle"
-       font-family="Arial"
-       font-size="18px"
-       id="text51">21</text>
-    <text
-       x="120"
-       y="175"
-       text-anchor="middle"
-       font-family="Arial"
-       font-size="18px"
-       id="text52">30</text>
-    <text
-       x="170"
-       y="175"
-       text-anchor="middle"
-       font-family="Arial"
-       font-size="18px"
-       id="text53">39</text>
-    <text
-       x="220"
-       y="175"
-       text-anchor="middle"
-       font-family="Arial"
-       font-size="18px"
-       id="text54">48</text>
-    <text
-       x="120"
-       y="225"
-       text-anchor="middle"
-       font-family="Arial"
-       font-size="18px"
-       id="text55">51</text>
-    <text
-       x="170"
-       y="225"
-       text-anchor="middle"
-       font-family="Arial"
-       font-size="18px"
-       id="text56">62</text>
-    <text
-       x="220"
-       y="225"
-       text-anchor="middle"
-       font-family="Arial"
-       font-size="18px"
-       id="text57">73</text>
-    <!-- Column-major access pattern with arrows -->
-    <!-- First column: 9-30-51 -->
-    <path
-       d="m 120,130 v 20"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path57" />
-    <path
-       d="m 120,150 -5,-5 5,5 5,-5"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path58" />
-    <path
-       d="m 120,180 v 20"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path59" />
-    <path
-       d="m 120,200 -5,-5 5,5 5,-5"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path60" />
-    <!-- Second column: 16-39-62 -->
-    <path
-       d="m 170,130 v 20"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path61" />
-    <path
-       d="m 170,150 -5,-5 5,5 5,-5"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path62" />
-    <path
-       d="m 170,180 v 20"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path63" />
-    <path
-       d="m 170,200 -5,-5 5,5 5,-5"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path64" />
-    <!-- Third column: 21-48-73 -->
-    <path
-       d="m 220,130 v 20"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path65" />
-    <path
-       d="m 220,150 -5,-5 5,5 5,-5"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path66" />
-    <path
-       d="m 220,180 v 20"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path67" />
-    <path
-       d="m 220,200 -5,-5 5,5 5,-5"
-       stroke="#ff4d4d"
-       stroke-width="2"
-       fill="none"
-       id="path68" />
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="190.71" height="161.73" version="1.1" viewBox="0 0 190.71 161.73" xmlns="http://www.w3.org/2000/svg">
+ <!-- Matrix cells with leading dimension -->
+ <g transform="matrix(.4787 0 0 .46133 27.709 .23066)">
+  <!-- Leading Dimension Brace -->
+  <path d="m-20 0q-15 175 0 350" fill="none" stroke="#000" stroke-width="2"/>
+  <text transform="rotate(-90,-45,175)" x="-45" y="175" font-family="Arial" font-size="18px" text-anchor="middle">Leading Dimension</text>
+  <g fill="none" stroke="#808080">
+   <!-- Empty cells (row 0) -->
+   <rect width="40" height="40"/>
+   <rect x="50" width="40" height="40"/>
+   <rect x="100" width="40" height="40"/>
+   <rect x="150" width="40" height="40"/>
+   <rect x="200" width="40" height="40"/>
+   <rect x="250" width="40" height="40"/>
+   <rect x="300" width="40" height="40"/>
+   <!-- Empty cells (row 1) -->
+   <rect y="50" width="40" height="40"/>
+   <rect x="50" y="50" width="40" height="40"/>
+   <rect x="100" y="50" width="40" height="40"/>
+   <rect x="150" y="50" width="40" height="40"/>
+   <rect x="200" y="50" width="40" height="40"/>
+   <rect x="250" y="50" width="40" height="40"/>
+   <rect x="300" y="50" width="40" height="40"/>
+   <!-- Row 2 -->
+   <rect y="100" width="40" height="40"/>
+   <rect x="50" y="100" width="40" height="40"/>
   </g>
+  <g stroke="#808080">
+   <rect x="100" y="100" width="40" height="40" fill="#c6e2ff"/>
+   <rect x="150" y="100" width="40" height="40" fill="#b3d9ff"/>
+   <rect x="200" y="100" width="40" height="40" fill="#a3d1ff"/>
+  </g>
+  <g fill="none" stroke="#808080">
+   <rect x="250" y="100" width="40" height="40"/>
+   <rect x="300" y="100" width="40" height="40"/>
+   <!-- Row 3 -->
+   <rect y="150" width="40" height="40"/>
+   <rect x="50" y="150" width="40" height="40"/>
+  </g>
+  <g stroke="#808080">
+   <rect x="100" y="150" width="40" height="40" fill="#9dcaff"/>
+   <rect x="150" y="150" width="40" height="40" fill="#80b3ff"/>
+   <rect x="200" y="150" width="40" height="40" fill="#66a3ff"/>
+  </g>
+  <g fill="none" stroke="#808080">
+   <rect x="250" y="150" width="40" height="40"/>
+   <rect x="300" y="150" width="40" height="40"/>
+   <!-- Row 4 -->
+   <rect y="200" width="40" height="40"/>
+   <rect x="50" y="200" width="40" height="40"/>
+  </g>
+  <g stroke="#808080">
+   <rect x="100" y="200" width="40" height="40" fill="#4d94ff"/>
+   <rect x="150" y="200" width="40" height="40" fill="#3385ff"/>
+   <rect x="200" y="200" width="40" height="40" fill="#1a75ff"/>
+  </g>
+  <g fill="none" stroke="#808080">
+   <rect x="250" y="200" width="40" height="40"/>
+   <rect x="300" y="200" width="40" height="40"/>
+   <!-- Empty cells (row 5) -->
+   <rect y="250" width="40" height="40"/>
+   <rect x="50" y="250" width="40" height="40"/>
+   <rect x="100" y="250" width="40" height="40"/>
+   <rect x="150" y="250" width="40" height="40"/>
+   <rect x="200" y="250" width="40" height="40"/>
+   <rect x="250" y="250" width="40" height="40"/>
+   <rect x="300" y="250" width="40" height="40"/>
+   <!-- Empty cells (row 6) -->
+   <rect y="300" width="40" height="40"/>
+   <rect x="50" y="300" width="40" height="40"/>
+   <rect x="100" y="300" width="40" height="40"/>
+   <rect x="150" y="300" width="40" height="40"/>
+   <rect x="200" y="300" width="40" height="40"/>
+   <rect x="250" y="300" width="40" height="40"/>
+   <rect x="300" y="300" width="40" height="40"/>
+   <!-- Values -->
+  </g>
+  <g font-family="Arial" font-size="18px" text-anchor="middle">
+   <text x="120" y="125">9</text>
+   <text x="170" y="125">16</text>
+   <text x="220" y="125">21</text>
+   <text x="120" y="175">30</text>
+   <text x="170" y="175">39</text>
+   <text x="220" y="175">48</text>
+   <text x="120" y="225">51</text>
+   <text x="170" y="225">62</text>
+   <text x="220" y="225">73</text>
+  </g>
+  <g fill="none" stroke="#ff4d4d" stroke-width="2">
+   <!-- Column-major access pattern with arrows -->
+   <!-- First column: 9-30-51 -->
+   <path d="m120 130v20"/>
+   <path d="m120 150-5-5 5 5 5-5"/>
+   <path d="m120 180v20"/>
+   <path d="m120 200-5-5 5 5 5-5"/>
+   <!-- Second column: 16-39-62 -->
+   <path d="m170 130v20"/>
+   <path d="m170 150-5-5 5 5 5-5"/>
+   <path d="m170 180v20"/>
+   <path d="m170 200-5-5 5 5 5-5"/>
+   <!-- Third column: 21-48-73 -->
+   <path d="m220 130v20"/>
+   <path d="m220 150-5-5 5 5 5-5"/>
+   <path d="m220 180v20"/>
+   <path d="m220 200-5-5 5 5 5-5"/>
+  </g>
+ </g>
 </svg>
