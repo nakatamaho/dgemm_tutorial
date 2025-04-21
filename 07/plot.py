@@ -5,6 +5,9 @@ import platform
 import subprocess
 import re
 
+# グローバル設定をリセット
+plt.rcdefaults()
+
 # CPUモデル名を取得する関数
 def get_cpu_model():
     try:
@@ -59,6 +62,7 @@ openblas_flops = openblas_results['Mean_GFLOPS']
 
 # プロット
 plt.figure(figsize=(12, 8))
+plt.clf()  # プロットをクリア
 
 if has_simple_results:
     simple_flops = simple_results['Mean_GFLOPS']
@@ -71,8 +75,9 @@ plt.title(f'DGEMM Performance - {cpu_model}')
 plt.legend()
 plt.grid(True)
 
-# リニアスケールで表示（対数スケールを使用しない）
-# plt.yscale('log')  # この行はコメントアウトまたは削除
+# 明示的にリニアスケールを設定
+plt.yscale('linear')
+print("Y軸はリニアスケールに設定されました")
 
 # 結果を保存
 plt.savefig('dgemm_performance.png', dpi=300)
@@ -83,11 +88,13 @@ if has_simple_results:
     
     # スピードアップのプロット
     plt.figure(figsize=(12, 8))
+    plt.clf()  # プロットをクリア
     plt.plot(sizes, speedup, 'g-')
     plt.xlabel('Matrix Size (N x N)')
     plt.ylabel('Speedup (OpenBLAS / Simple)')
     plt.title(f'OpenBLAS Speedup - {cpu_model}')
     plt.grid(True)
+    plt.yscale('linear')  # 明示的にリニアスケール
     plt.savefig('dgemm_speedup.png', dpi=300)
     
     # 統計情報の出力
