@@ -1,25 +1,58 @@
+/*
+ * Copyright (c) 2025
+ *     Nakata, Maho
+ *     All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ *
+ */
+
 #include <iostream>
-#include <vector>
-#include <random>
 #include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <random>
+#include <cstring>
+#include <set>
+#include <memory>
+#include <vector>
 #include <algorithm>
-#include <numeric>
-#include <fstream>
-#include <cblas.h>
+#include <mm_malloc.h>
+
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
-// ランダム行列生成関数
-void generate_random_matrix(int rows, int cols, double* matrix) {
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_real_distribution<double> dist(-1.0, 1.0);
+#define ALIGNMENT 64
 
-    for (int i = 0; i < rows * cols; ++i) {
-        matrix[i] = dist(gen);
-    }
+extern "C" {
+void dgemm_(const char *transa, const char *transb, const int *m, const int *n, const int *k, const double *alpha, const double *A, const int *lda, const double *B, const int *ldb, const double *beta, double *C, const int *ldc);
 }
+
+
+#define DIM_START 1
+#define DIM_END 30000
+#define NUMTRIALS 10
+#define STEP 1
 
 // 最も単純なDGEMM実装(NN版のみ)
 void dgemm_simple_nn(int m, int n, int k, double alpha, const double *A, int lda,
@@ -71,141 +104,126 @@ void dgemm_simple_nn(int m, int n, int k, double alpha, const double *A, int lda
     }
 }
 
-// ベンチマーク関数
-template <typename Func>
-double benchmark(Func func) {
-    auto start = std::chrono::high_resolution_clock::now();
-    func();
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    return elapsed.count();
+// cf. https://netlib.org/lapack/lawnspdf/lawn41.pdf p.120
+double flops_gemm(int k_i, int m_i, int n_i) {
+    double adds, muls, flops;
+    double k, m, n;
+    m = (double)m_i;
+    n = (double)n_i;
+    k = (double)k_i;
+    muls = m * (k + 2) * n;
+    adds = m * k * n;
+    flops = muls + adds;
+    return flops;
 }
 
-// 平均と分散の計算
-std::pair<double, double> calculate_mean_and_variance(const std::vector<double> &values) {
-    double mean = 0.0;
-    double variance = 0.0;
-
-    for (double value : values) {
-        mean += value;
+void generate_random_matrix(int rows, int cols, double *matrix, int ld) {
+    std::mt19937 mt(std::random_device{}());
+    std::uniform_real_distribution<double> dist(-1.0, 1.0);
+    for (int j = 0; j < cols; j++) {
+        for (int i = 0; i < rows; i++) {
+            matrix[i + j * ld] = dist(mt);
+        }
     }
-    mean /= values.size();
-
-    for (double value : values) {
-        double diff = (value - mean);
-        variance += diff * diff;
-    }
-    variance /= values.size();
-
-    return {mean, variance};
 }
 
-int main() {
-#ifdef _OPENMP
-    std::cout << "OpenMP is enabled.\n";
-    std::cout << "Number of threads (max): " << omp_get_max_threads() << "\n";
-#else
-    std::cout << "OpenMP is not enabled.\n";
-#endif
-
-    // OpenBLASのスレッド数設定（必要に応じて）
-    // openblas_set_num_threads(4);
-    
-    // 1から1000まで7ずつのサイズを生成（正方行列用）
-    std::vector<int> sizes;
-    for (int size = 1; size <= 1000; size += 7) {
-        sizes.push_back(size);
+double compute_max_abs_diff(const double *ref, const double *test, int size) {
+    double max_diff = 0.0;
+    for (int i = 0; i < size; i++) {
+        double diff = fabs(ref[i] - test[i]);
+        if (diff > max_diff) {
+            max_diff = diff;
+        }
     }
-    
-    const int num_trials = 5;
+    return max_diff;
+}
+
+int main(int argc, char *argv[]) {
+    bool no_check = false;
+    for (int i = 1; i < argc; i++) {
+        if (std::strcmp(argv[i], "--nocheck") == 0) {
+            no_check = true;
+        }
+    }
+
+    if (!no_check) {
+        std::cout << "m,n,k,maxflops,minflops,maxdiff" << std::endl;
+    } else {
+        std::cout << "m,n,k,maxflops,minflops" << std::endl;
+    }
+    const int num_trials = NUMTRIALS;
     std::mt19937 mt(std::random_device{}());
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
-    // 結果を保存するファイルを開く
-    std::ofstream openblas_file("openblas_results.csv");
-    std::ofstream simple_file("simple_results.csv");
-    
-    openblas_file << "Size,Mean_GFLOPS,Variance\n";
-    simple_file << "Size,Mean_GFLOPS,Variance\n";
+    std::set<int> n_values;
+    for (int n = DIM_START; n <= DIM_END; n += STEP) {
+        n_values.insert(n);
+    }
+    for (int m = 0; (128 * m) <= DIM_END; ++m) {
+        int multiple128 = 128 * m;
+        if (multiple128 >= DIM_START && multiple128 <= DIM_END)
+            n_values.insert(multiple128);
+        if (multiple128 - 128 >= DIM_START && multiple128 - 128 <= DIM_END)
+            n_values.insert(multiple128 - 128);
+        if (multiple128 + 128 >= DIM_START && multiple128 + 128 <= DIM_END)
+            n_values.insert(multiple128 + 128);
+    }
 
-    for (auto size : sizes) {
-        // m = n = k = size の正方行列
-        int m = size;
-        int n = size;
-        int k = size;
-        double flop_count = static_cast<double>(m) * n * (2.0 * k + 1);
+    std::vector<int> sorted_n_values(n_values.begin(), n_values.end());
+    std::sort(sorted_n_values.begin(), sorted_n_values.end());
 
-        std::vector<double> A(m * k);
-        std::vector<double> B(k * n);
-        std::vector<double> C(m * n);
+    for (int n : sorted_n_values) {
+        int m = n, k = n, lda = m, ldb = k, ldc = m;
+        double flop_count = flops_gemm(m, n, k);
+
+        double *A = static_cast<double *>(_mm_malloc(lda * k * sizeof(double), ALIGNMENT));
+        double *B = static_cast<double *>(_mm_malloc(ldb * n * sizeof(double), ALIGNMENT));
+        double *C = static_cast<double *>(_mm_malloc(ldc * n * sizeof(double), ALIGNMENT));
+        double *Corg = static_cast<double *>(_mm_malloc(ldc * n * sizeof(double), ALIGNMENT));
+        double *Cref = static_cast<double *>(_mm_malloc(ldc * n * sizeof(double), ALIGNMENT));
 
         double alpha = dist(mt);
         double beta = dist(mt);
 
-        generate_random_matrix(m, k, A.data());
-        generate_random_matrix(k, n, B.data());
-        generate_random_matrix(m, n, C.data());
+        generate_random_matrix(m, k, A, lda);
+        generate_random_matrix(k, n, B, ldb);
+        generate_random_matrix(m, n, C, ldc);
 
-        std::cout << "Benchmarking m=" << m << ", n=" << n << ", k=" << k << ":\n";
-
-        // シンプル実装のベンチマーク
-        std::vector<double> simple_flops_results;
-        for (int trial = 0; trial < num_trials; ++trial) {
-            std::vector<double> C_test = C;
-            double elapsed = benchmark([&]() {
-                dgemm_simple_nn(m, n, k, alpha, A.data(), m, B.data(), k, beta, C_test.data(), m);
-            });
-            double flops = flop_count / elapsed / 1.0e9; // GFLOPS
-            simple_flops_results.push_back(flops);
+        memcpy(Corg, C, sizeof(double) * ldc * n);
+        if (!no_check) {
+            memcpy(Cref, C, sizeof(double) * ldc * n);
+            dgemm_simple_nn(m, n, k, alpha, A, lda, B, ldb, beta, Cref, ldc);
         }
 
-        auto [mean_simple_flops, var_simple_flops] = calculate_mean_and_variance(simple_flops_results);
-
-        std::cout << "Simple Implementation:\n";
-        std::cout << "  FLOPS for each trial [GFLOPS]: ";
-        for (const auto &val : simple_flops_results) {
-            std::cout << val << " ";
-        }
-        std::cout << "\n";
-        std::cout << "  Mean FLOPS: " << mean_simple_flops << " GFLOPS, Variance: " << var_simple_flops << "\n";
-        std::cout << "------------------------------------------------\n";
-        
-        // 結果をCSVに書き込む
-        simple_file << size << "," << mean_simple_flops << "," << var_simple_flops << "\n";
-
-        // OpenBLAS実装のベンチマーク
-        std::vector<double> openblas_flops_results;
-        for (int trial = 0; trial < num_trials; ++trial) {
-            std::vector<double> C_test = C;
-            double elapsed = benchmark([&]() {
-                // OpenBLASのdgemm呼び出し
-                // C = alpha * A * B + beta * C
-                // CblasRowMajor: 行優先
-                // CblasNoTrans: 転置なし
-                cblas_dgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 
-                           m, n, k, alpha, A.data(), k, B.data(), n, 
-                           beta, C_test.data(), n);
-            });
-            double flops = flop_count / elapsed / 1.0e9; // GFLOPS
-            openblas_flops_results.push_back(flops);
+        double max_flops = 0.0;
+        double min_flops = std::numeric_limits<double>::max();
+        for (int trial = 0; trial < num_trials; trial++) {
+            memcpy(C, Corg, sizeof(double) * ldc * n);
+            auto start = std::chrono::high_resolution_clock::now();
+            dgemm_("N", "N", &m, &n, &k, &alpha, A, &lda, B, &ldb, &beta, C, &ldc);
+            auto end = std::chrono::high_resolution_clock::now();
+            double elapsed_time = std::chrono::duration<double>(end - start).count();
+            double flops = flop_count / elapsed_time / 1.0e6;
+            if (flops > max_flops) {
+                max_flops = flops;
+            }
+            if (flops < min_flops) {
+                min_flops = flops;
+            }
         }
 
-        auto [mean_openblas_flops, var_openblas_flops] = calculate_mean_and_variance(openblas_flops_results);
-
-        std::cout << "OpenBLAS Implementation:\n";
-        std::cout << "  FLOPS for each trial [GFLOPS]: ";
-        for (const auto &val : openblas_flops_results) {
-            std::cout << val << " ";
+        double max_diff = no_check ? 0.0 : compute_max_abs_diff(C, Cref, m * n);
+        if (!no_check) {
+            std::cout << m << "," << n << "," << k << "," << max_flops << "," << min_flops << "," << max_diff << std::endl;
+        } else {
+            std::cout << m << "," << n << "," << k << "," << max_flops << "," << min_flops << std::endl;
         }
-        std::cout << "\n";
-        std::cout << "  Mean FLOPS: " << mean_openblas_flops << " GFLOPS, Variance: " << var_openblas_flops << "\n";
-        std::cout << "------------------------------------------------\n";
-        
-        // 結果をCSVに書き込む
-        openblas_file << size << "," << mean_openblas_flops << "," << var_openblas_flops << "\n";
+
+        _mm_free(A);
+        _mm_free(B);
+        _mm_free(C);
+        _mm_free(Corg);
+        _mm_free(Cref);
     }
-    
-    openblas_file.close();
-    simple_file.close();
     return 0;
 }
