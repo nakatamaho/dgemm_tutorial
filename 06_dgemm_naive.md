@@ -122,6 +122,7 @@ $$C(i,j) = \beta \times C(i,j) + \alpha \times \sum_{l=0}^{k-1} \left( A(i,l) \t
 
 ## ベンチマークをとる
 
+以下のコードでvoid dgemm_simple_nnのベンチマークを取ります1から1000まで7ずつ正方行列として実行時間を測定します。
 ```cpp
 #include <chrono>
 #include <cmath>
@@ -230,17 +231,27 @@ std::pair<double, double> calculate_mean_and_variance(const std::vector<double> 
 }
 
 int main() {
-    const int num_trials = 5;
-    std::mt19937 mt(std::random_device{}());
-    std::uniform_real_distribution<double> dist(-1.0, 1.0);
-
+#ifdef _OPENMP
+    std::cout << "OpenMP is enabled.\n";
+    std::cout << "Number of threads (max): " << omp_get_max_threads() << "\n";
+#else
+    std::cout << "OpenMP is not enabled.\n";
+#endif
+    // 1から1000まで7ずつのサイズを生成（正方行列用）
     std::vector<int> sizes;
     for (int size = 1; size <= 1000; size += 7) {
         sizes.push_back(size);
     }
-    for (auto m : sizes) {
-        for (auto n : sizes) {
-            for (auto k : sizes) {
+    
+    const int num_trials = 5;
+    std::mt19937 mt(std::random_device{}());
+    std::uniform_real_distribution<double> dist(-1.0, 1.0);
+
+    for (auto size : sizes) {
+        // m = n = k = size の正方行列
+        int m = size;
+        int n = size;
+        int k = size;
                 double flop_count = static_cast<double>(m) * n * (2.0 * k + 1);
 
                 std::vector<double> A(m * k);
@@ -279,6 +290,7 @@ int main() {
                 std::cout << "------------------------------------------------\n";
             }
         }
-    }
+    
+
     return 0;
 }
