@@ -1,3 +1,158 @@
+# 最も簡単なDGEMM実装 (NN版)
+
+DGEMMのNN版は、行列の転置を行わない場合の実装です。この関数は以下の演算を行います：
+
+```
+C ← α×A×B + β×C
+```
+
+ここで：
+- A は m×k の行列
+- B は k×n の行列 
+- C は m×n の行列
+- α, β はスカラー値
+
+## 実装の説明
+
+以下に、最も単純なDGEMM実装を示します。この実装では、行列AとBが転置されていない（NN: Not transposed）場合のみを考慮しています。
+
+```cpp
+#include <chrono>
+#include <cmath>
+#include <iostream>
+#include <random>
+#include <vector>
+#include <algorithm>
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+// 最も単純なDGEMM実装（NN版のみ）
+void dgemm_simple_nn(int m, int n, int k, double alpha, const double *A, int lda,
+                     const double *B, int ldb, double beta, double *C, int ldc) {
+    // m: 行列Cの行数
+    // n: 行列Cの列数
+    // k: 行列Aの列数 = 行列Bの行数
+    // alpha, beta: スカラー係数
+    // A: m×k行列
+    // B: k×n行列
+    // C: m×n行列
+    // lda, ldb, ldc: 各行列の先頭次元（leading dimension）
+    
+    // 簡単なケースの処理
+    if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
+        return;  // 何もしない
+    }
+    
+    // alpha == 0の場合
+    if (alpha == 0.0) {
+        if (beta == 0.0) {
+            // C = 0
+            for (int j = 0; j < n; j++) {
+                for (int i = 0; i < m; i++) {
+                    C[i + j * ldc] = 0.0;
+                }
+            }
+        } else {
+            // C = beta * C
+            for (int j = 0; j < n; j++) {
+                for (int i = 0; i < m; i++) {
+                    C[i + j * ldc] = beta * C[i + j * ldc];
+                }
+            }
+        }
+        return;
+    }
+    
+    // メインの行列積計算: C = alpha * A * B + beta * C
+    for (int j = 0; j < n; j++) {
+        // betaによるCの初期化
+        if (beta == 0.0) {
+            for (int i = 0; i < m; i++) {
+                C[i + j * ldc] = 0.0;
+            }
+        } else if (beta != 1.0) {
+            for (int i = 0; i < m; i++) {
+                C[i + j * ldc] = beta * C[i + j * ldc];
+            }
+        }
+        
+        // 行列積の計算
+        for (int l = 0; l < k; l++) {
+            if (B[l + j * ldb] != 0.0) {
+                double temp = alpha * B[l + j * ldb];
+                for (int i = 0; i < m; i++) {
+                    C[i + j * ldc] += temp * A[i + l * lda];
+                }
+            }
+        }
+    }
+}
+```
+
+## 実装の解説
+
+この実装は、行列積の最も基本的なアルゴリズムを使用しています。行列Cの各要素 C(i,j) は以下のように計算されます：
+
+```
+C(i,j) = β×C(i,j) + α×∑(A(i,l)×B(l,j)) （l=0からk-1まで）
+```
+
+実装の流れは以下の通りです：
+
+1. **特殊ケースの処理**：
+   - 行列のサイズが0の場合や、計算結果が現在のCと同じになる場合は早期リターン
+   - α=0の場合は行列積の計算をスキップし、βによるCの更新のみ行う
+
+2. **主要計算部分**：
+   - 列優先（column-major）メモリレイアウトを前提としたループ構造
+   - 最外ループは列方向（j）
+   - βによるCの初期化を各列ごとに行う
+   - 行列積の計算はB(l,j)が0でない場合のみ行う最適化
+
+3. **メモリアクセスの最適化**：
+   - α×B(l,j)の値をtempに保存し再利用することで、内側ループでの乗算回数を削減
+   - 列優先メモリレイアウトに合わせたアクセスパターンの採用
+
+## パフォーマンス上の注意点
+
+この実装は教育目的としては明快ですが、大規模な行列に対しては以下の理由から最適ではありません：
+
+1. **キャッシュ効率**：大きな行列に対してはキャッシュミスが頻発する
+2. **メモリアクセスパターン**：特に内側ループでのA行列アクセスはストライドが大きい
+3. **命令レベル並列性**：現代のCPUが持つSIMD命令を明示的に活用していない
+
+実際の高性能実装では、ブロック化（blocking）やアンローリング（unrolling）、SIMD命令の活用など、様々な最適化技術が使用されます。
+
+## 使用例
+
+以下は、この関数を使用する簡単な例です：
+
+```cpp
+int main() {
+    const int m = 3, n = 2, k = 4;
+    
+    // 行列の初期化
+    std::vector<double> A = {1, 4, 7, 2, 5, 8, 3, 6, 9, 10, 11, 12};  // 3×4行列
+    std::vector<double> B = {1, 5, 2, 6, 3, 7, 4, 8};                 // 4×2行列
+    std::vector<double> C(m * n, 0);                                  // 3×2行列
+    
+    // DGEMM実行
+    dgemm_simple_nn(m, n, k, 1.0, A.data(), m, B.data(), k, 0.0, C.data(), m);
+    
+    // 結果表示
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            std::cout << C[i + j * m] << " ";
+        }
+        std::cout << std::endl;
+    }
+    
+    return 0;
+}
+```
+
 #include <chrono>
 #include <cmath>
 #include <iostream>
