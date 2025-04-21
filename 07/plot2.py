@@ -51,7 +51,7 @@ except FileNotFoundError:
     has_simple_results = False
 
 try:
-    openblas_results = pd.read_csv('openblas_results.csv')
+    openblas_results = pd.read_csv('openblas_small_results.csv')
 except FileNotFoundError:
     print("openblas_results.csv が見つかりません。ファイルが生成されているか確認してください。")
     exit(1)
