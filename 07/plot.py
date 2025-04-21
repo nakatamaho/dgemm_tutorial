@@ -1,6 +1,42 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import platform
+import subprocess
+import re
+
+# CPUモデル名を取得する関数
+def get_cpu_model():
+    try:
+        if platform.system() == "Linux":
+            # Linuxの場合
+            with open('/proc/cpuinfo', 'r') as f:
+                for line in f:
+                    if line.startswith('model name'):
+                        return line.split(':')[1].strip()
+            return "Unknown CPU"
+        elif platform.system() == "Darwin":
+            # macOSの場合
+            command = "sysctl -n machdep.cpu.brand_string"
+            return subprocess.check_output(command.split()).decode().strip()
+        elif platform.system() == "Windows":
+            # Windowsの場合
+            command = "wmic cpu get name"
+            output = subprocess.check_output(command.split()).decode()
+            return output.strip().split('\n')[1]
+        else:
+            return "Unknown CPU"
+    except:
+        return "Unknown CPU"
+
+# CPUモデル名を取得
+cpu_model = get_cpu_model()
+# 長すぎる場合は短くする
+if len(cpu_model) > 50:
+    cpu_model = re.sub(r'\([^)]*\)', '', cpu_model)  # カッコ内の情報を削除
+    cpu_model = re.sub(r'\s+', ' ', cpu_model).strip()  # 複数の空白を1つに
+
+print(f"検出されたCPU: {cpu_model}")
 
 # 結果ファイルの読み込み
 # simple_results.csvが存在しない場合に対応
@@ -31,7 +67,7 @@ if has_simple_results:
 plt.plot(sizes, openblas_flops, 'r-', label='OpenBLAS')
 plt.xlabel('Matrix Size (N x N)')
 plt.ylabel('Performance (GFLOPS)')
-plt.title('DGEMM Performance Comparison')
+plt.title(f'DGEMM Performance - {cpu_model}')
 plt.legend()
 plt.grid(True)
 
@@ -50,7 +86,7 @@ if has_simple_results:
     plt.plot(sizes, speedup, 'g-')
     plt.xlabel('Matrix Size (N x N)')
     plt.ylabel('Speedup (OpenBLAS / Simple)')
-    plt.title('OpenBLAS Speedup over Simple Implementation')
+    plt.title(f'OpenBLAS Speedup - {cpu_model}')
     plt.grid(True)
     plt.savefig('dgemm_speedup.png', dpi=300)
     
