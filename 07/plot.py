@@ -71,8 +71,8 @@ plt.title(f'DGEMM Performance - {cpu_model}')
 plt.legend()
 plt.grid(True)
 
-# y軸を対数スケールで表示
-plt.yscale('log')
+# リニアスケールで表示（対数スケールを使用しない）
+# plt.yscale('log')  # この行はコメントアウトまたは削除
 
 # 結果を保存
 plt.savefig('dgemm_performance.png', dpi=300)
