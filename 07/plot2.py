@@ -80,7 +80,7 @@ plt.yscale('linear')
 print("Y軸はリニアスケールに設定されました")
 
 # 結果を保存
-plt.savefig('dgemm_performance.png', dpi=300)
+plt.savefig('dgemm_small.png', dpi=300)
 
 # スピードアップ比を計算（シンプル実装の結果がある場合のみ）
 if has_simple_results:
