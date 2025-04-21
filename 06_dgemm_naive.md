@@ -230,18 +230,14 @@ std::pair<double, double> calculate_mean_and_variance(const std::vector<double> 
 }
 
 int main() {
-#ifdef _OPENMP
-    std::cout << "OpenMP is enabled.\n";
-    std::cout << "Number of threads (max): " << omp_get_max_threads() << "\n";
-#else
-    std::cout << "OpenMP is not enabled.\n";
-#endif
-    std::vector<int> sizes = {256, 512, 1024};
-
     const int num_trials = 5;
     std::mt19937 mt(std::random_device{}());
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
+    std::vector<int> sizes;
+    for (int size = 1; size <= 1000; size += 7) {
+        sizes.push_back(size);
+    }
     for (auto m : sizes) {
         for (auto n : sizes) {
             for (auto k : sizes) {
