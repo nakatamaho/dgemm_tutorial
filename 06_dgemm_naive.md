@@ -95,9 +95,14 @@ void dgemm_simple_nn(int m, int n, int k, double alpha, const double *A, int lda
 
 この実装は、行列積の最も基本的なアルゴリズムを使用しています。行列Cの各要素 C(i,j) は以下のように計算されます：
 
-```
-C(i,j) = β×C(i,j) + α×∑(A(i,l)×B(l,j)) （l=0からk-1まで）
-```
+$$C(i,j) = \beta \times C(i,j) + \alpha \times \sum_{l=0}^{k-1} \left( A(i,l) \times B(l,j) \right)$$
+
+ここで：
+- $C(i,j)$ は結果行列の $(i,j)$ 要素
+- $A(i,l)$ は第一入力行列の $(i,l)$ 要素
+- $B(l,j)$ は第二入力行列の $(l,j)$ 要素
+- $\alpha, \beta$ はスカラー係数
+- 総和は $l=0$ から $k-1$ までの範囲
 
 実装の流れは以下の通りです：
 
