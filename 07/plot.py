@@ -61,7 +61,7 @@ plt.text(df["n"].max(), peak_performance, f"{peak_performance} GFLOPS", color='r
 
 plt.xlabel("Matrix Size (n x n)")
 plt.ylabel("FLOPS (GFLOPS)")
-plt.title("DGEMM Performance on {cpu_model}:")
+plt.title(f"DGEMM Performance on {cpu_model}")
 plt.legend()
 plt.grid()
 plt.xlim(left=0)
