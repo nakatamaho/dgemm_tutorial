@@ -96,7 +96,7 @@ if has_simple_results:
     print(f"Minimum speedup: {np.min(speedup):.2f}x at size {sizes[np.argmin(speedup)]}")
 
 # OpenBLASの性能情報表示
-print("\nOpenBLAS Performance Statistics:")
+print(f"\nOpenBLAS Performance Statistics on {cpu_model}:")
 print(f"Average GFLOPS: {np.mean(openblas_flops):.2f}")
 print(f"Maximum GFLOPS: {np.max(openblas_flops):.2f} at size {sizes[np.argmax(openblas_flops)]}")
 print(f"Minimum GFLOPS: {np.min(openblas_flops):.2f} at size {sizes[np.argmin(openblas_flops)]}")
