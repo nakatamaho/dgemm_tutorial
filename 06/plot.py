@@ -74,7 +74,7 @@ def read_and_plot_csv(csv_file="dgemm_benchmark_results.csv"):
     for x, label in boundaries:
         plt.axvline(x=x, color="black", linestyle="--", linewidth=1, zorder=1)
         plt.text(
-            x + 2,                                   # 少し右にずらす
+            x + 4,                                   # 少し右にずらす
             ymax - (ymax - ymin) * 0.4,              # 上端から40%下
             label,
             verticalalignment="top",
