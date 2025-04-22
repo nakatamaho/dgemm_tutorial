@@ -52,7 +52,7 @@ $$C(i,j) = \beta \times C(i,j) + \alpha \times \sum_{l=0}^{k-1} \left( A(i,l) \t
 
 ## ベンチマークをとる
 
-以下のコードでvoid dgemm_simple_nnのベンチマークを取ります1から1000まで7ずつ正方行列として実行時間を測定します。
+以下のコードでvoid dgemm_simple_nnのベンチマークを取ります1から3500まで7ずつ正方行列として実行時間を測定します。
 ```cpp
 #include <chrono>
 #include <cmath>
@@ -248,12 +248,14 @@ Benchmarking size 11...
 Benchmarking size 12...
 Benchmarking size 13...
 ...
-Benchmarking size 961...
-Benchmarking size 968...
-Benchmarking size 975...
-Benchmarking size 982...
-Benchmarking size 989...
-Benchmarking size 996...
+Benchmarking size 3446...
+Benchmarking size 3453...
+Benchmarking size 3460...
+Benchmarking size 3467...
+Benchmarking size 3474...
+Benchmarking size 3481...
+Benchmarking size 3488...
+Benchmarking size 3495...
 Benchmark complete. Results saved to dgemm_benchmark_results.csv
 ```
 dgemm_benchmark_results.csvというファイルができますので、プロットします。
@@ -271,58 +273,67 @@ python3 plot.py
 プロットおよびベンチマーク結果から，行列サイズ $$N$$ に対する DGEMM 性能はキャッシュ階層ごとに大まかに分類できます。
 
 新たに取得したプロットおよびベンチマーク結果から、行列サイズ $$N$$ に対する DGEMM 性能はキャッシュ階層ごとに以下の４つの領域に分かれることが確認できます。各領域の境界は、ワーキングセットサイズ  
-$$
-2N^2 \times 8\ (\mathrm{Bytes})
-$$  
+$$2N^2 \times 8\ (\mathrm{Bytes})$$  
 とキャッシュ容量との関係からも概ね整合しています。
 
 
 1. **キャッシュサイズからの境界となる行列サイズの導出**
 
-- **L1 キャッシュ**：2048 KB  
-- **L2 キャッシュ**：16 MB  
-- **L3 キャッシュ**：128 MB
-  - L1境界：$$2N^2\times8 = 2{,}048\,\mathrm{kB}\;\Rightarrow\;N\approx362$$  
-  - L2境界：$$2N^2\times8 = 16\,\mathrm{MB}\;\Rightarrow\;N=1024$$  
-  - L3境界：$$2N^2\times8 = 128\,\mathrm{MB}\;\Rightarrow\;N\approx2896$$  
+   - **L1 キャッシュ**：2048 KB
+L1境界：
+$$2N^2\times8 = 2{,}048\,\mathrm{kB} \Rightarrow N\approx362$$  
+
+   - **L2 キャッシュ**：16 MB
+L2境界：
+$$2N^2\times8 = 16\,\mathrm{MB}\Rightarrow N=1024$$  
+
+   - **L3 キャッシュ**：128 MB
+L3境界：
+$$2N^2\times8 = 128\,\mathrm{MB}\Rightarrow N\approx2896$$  
 
 2. **理論値に遠く及ばない性能**
    - binary64(倍精度)で[1.89 TFLOPS](https://github.com/nakatamaho/dgemm_tutorial/blob/main/02_flops.md)が理論性能値でした。
-   - 実測の最大は約 6.86 GFLOPS にとどまり，理論値の0.36 % にすぎません。
+   - 実測の最大は約 6.799 GFLOPS にとどまり，理論値の0.36 % にすぎません。
    - 1コアでFMAを使い、SIMD（AVX2）を使わない場合の理論ピークは 7.4 GFLOPS と計算できます(1.8944  * 1000 / 32 (cores) / 16 (AVX2;SIMD) * 2 (FMA) = 7.4)。 
-   - つまり、1コア、SIMDなしFMAありの場合の理論性能値では、92.7%も出ていました(Turboも入っているため正確ではない)。
+   - つまり、1コア、SIMDなしFMAありの場合の理論性能値では、92%も出ていました(Turboも入っているため正確ではない)。
 
 3. **L1キャッシュ領域**  
-   - 条件：$$2N^2\times8 \le 2\,048\ \mathrm{kB}\quad (\,N \lesssim 362\,)$$  
-   - 行列が完全にL1キャッシュ内に収まるため、SIMD＋FMAの効果が最大限に発揮される。  
-   - 性能は行列サイズ増加とともにほぼ線形に上昇し、$$N=85$$でピークの  
-     $$6.7990\ \mathrm{GFLOPS}$$  
+   - 条件：
+$$2N^2\times8 \le 2\,048\ \mathrm{kB}\quad (\,N \lesssim 362\,)$$  
+   - 行列が完全にL1キャッシュ内に収まるため、FMAのみを使い、SIMDを使わないが、計算自体に滞りはない。  
+   - 性能は行列サイズ増加とともにほぼ線形に上昇し、
+$$N=85$$でピークの  
+$$6.7990\ \mathrm{GFLOPS}$$  
      を記録。  
    - この領域における平均性能は  
-     $$5.38\ \mathrm{GFLOPS}\quad(\sigma=1.62\ \mathrm{GFLOPS})$$  
+$$5.38\ \mathrm{GFLOPS}\quad(\sigma=1.62\ \mathrm{GFLOPS})$$  
      と大きなばらつきを含む。
 
 4. **L2キャッシュ領域**  
-   - 条件：$$2N^2\times8 \le 16\ \mathrm{MB}\quad (362 \lesssim N \le 1024)$$  
+   - 条件：
+$$2N^2\times8 \le 16\ \mathrm{MB}\quad (362 \lesssim N \le 1024)$$  
    - ワーキングセットがL2キャッシュに収まるため、キャッシュミスが抑えられ最も安定して高い性能レベルを維持。  
    - 平均性能は  
-     $$6.72\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$  
+$$6.72\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$  
      で、ピーク近傍の高い性能を継続。
 
 5. **L3キャッシュ領域**  
-   - 条件：$$2N^2\times8 \le 128\ \mathrm{MB}\quad (1024 \lesssim N \le 2896)$$  
+   - 条件：
+$$2N^2\times8 \le 128\ \mathrm{MB}\quad (1024 \lesssim N \le 2896)$$  
    - データがL3キャッシュ内にはあるもののL2を超えるため、ミス率上昇に伴い性能が漸減。  
-   - $$N\approx1024$$付近では約$$6.77\ \mathrm{GFLOPS}$$を維持するものの、  
-     $$N\approx2896$$付近では約$$3.37\ \mathrm{GFLOPS}$$まで低下。  
+   -
+$$N\approx1024$$付近では約$$6.77\ \mathrm{GFLOPS}$$を維持するものの、  
+$$N\approx2896$$付近では約$$3.37\ \mathrm{GFLOPS}$$まで低下。  
    - 平均性能は  
-     $$4.22\ \mathrm{GFLOPS}\quad(\sigma=1.04\ \mathrm{GFLOPS})$$  
+$$4.22\ \mathrm{GFLOPS}\quad(\sigma=1.04\ \mathrm{GFLOPS})$$  
      と大きく変動する移行領域。
 
 6. **メインメモリ領域**  
-   - 条件：$$N \gtrsim 2896$$  
+   - 条件：
+$$N \gtrsim 2896$$  
    - ワーキングセットがL3を超え、DRAM帯域幅が性能制約となる。  
    - 平均性能は  
-     $$3.65\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$  
+$$3.65\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$  
      でほぼ横ばいになる。
 
 ## 注意点
