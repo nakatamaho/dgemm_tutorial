@@ -1,12 +1,12 @@
 # 最も簡単なDGEMM実装 (NN版)
 
-DGEMMのNN版は、行列の転置を行わない場合の実装です。この関数は以下の演算を行います：
+DGEMMのNN版は、行列の転置を行わない場合の実装です。この関数は以下の演算を行います:
 
 ```
 C ← α×A×B + β×C
 ```
 
-ここで：
+ここで:
 - A は m×k の行列
 - B は k×n の行列 
 - C は m×n の行列
@@ -17,17 +17,17 @@ C ← α×A×B + β×C
 
 ## 実装の説明
 
-以下に、最も単純なDGEMM実装を示します。この実装では、行列AとBが転置されていない（NN: Not transposed）場合のみを考慮しています。
+以下に、最も単純なDGEMM実装を示します。この実装では、行列AとBが転置されていない(NN: Not transposed)場合のみを考慮しています。
 
 
 
 ## 実装の解説
 
-この実装は、行列積の最も基本的なアルゴリズムを使用しています。行列Cの各要素 C(i,j) は以下のように計算されます：
+この実装は、行列積の最も基本的なアルゴリズムを使用しています。行列Cの各要素 C(i,j) は以下のように計算されます:
 
 $$C(i,j) = \beta \times C(i,j) + \alpha \times \sum_{l=0}^{k-1} \left( A(i,l) \times B(l,j) \right)$$
 
-ここで：
+ここで:
 - $C(i,j)$ は結果行列の $(i,j)$ 要素
 - $A(i,l)$ は第一入力行列の $(i,l)$ 要素
 - $B(l,j)$ は第二入力行列の $(l,j)$ 要素
@@ -281,15 +281,15 @@ $$2N^2 \times 8\ (\mathrm{Bytes})$$
 
    - **L1 キャッシュ**：2048 KB
 L1境界：
-$$2N^2\times8 = 2{,}048\,\mathrm{kB} \Rightarrow N\approx362$$  
+$$2N^2\times8 = 2{,}048 \mathrm{kB} \Rightarrow N\approx362$$  
 
    - **L2 キャッシュ**：16 MB
 L2境界：
-$$2N^2\times8 = 16\,\mathrm{MB}\Rightarrow N=1024$$  
+$$2N^2\times8 = 16 \mathrm{MB}\Rightarrow N=1024$$  
 
    - **L3 キャッシュ**：128 MB
 L3境界：
-$$2N^2\times8 = 128\,\mathrm{MB}\Rightarrow N\approx2896$$  
+$$2N^2\times8 = 128 \mathrm{MB}\Rightarrow N\approx2896$$  
 
 2. **理論値に遠く及ばない性能**
    - binary64(倍精度)で[1.89 TFLOPS](https://github.com/nakatamaho/dgemm_tutorial/blob/main/02_flops.md)が理論性能値でした。
