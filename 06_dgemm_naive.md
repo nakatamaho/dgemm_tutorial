@@ -281,12 +281,17 @@ $$
 
 1. **キャッシュサイズからの境界となる行列サイズの導出**
 
-- **L1 キャッシュ**：2048 KB  
-- **L2 キャッシュ**：16 MB  
-- **L3 キャッシュ**：128 MB
-  - L1境界：$$2N^2\times8 = 2{,}048\,\mathrm{kB}\;\Rightarrow\;N\approx362$$  
-  - L2境界：$$2N^2\times8 = 16\,\mathrm{MB}\;\Rightarrow\;N=1024$$  
-  - L3境界：$$2N^2\times8 = 128\,\mathrm{MB}\;\Rightarrow\;N\approx2896$$  
+   - **L1 キャッシュ**：2048 KB
+L1境界：
+$$2N^2\times8 = 2{,}048\,\mathrm{kB}\;\Rightarrow\;N\approx362$$  
+
+   - **L2 キャッシュ**：16 MB
+L2境界：
+$$2N^2\times8 = 16\,\mathrm{MB}\;\Rightarrow\;N=1024$$  
+
+   - **L3 キャッシュ**：128 MB
+L3境界：
+$$2N^2\times8 = 128\,\mathrm{MB}\;\Rightarrow\;N\approx2896$$  
 
 2. **理論値に遠く及ばない性能**
    - binary64(倍精度)で[1.89 TFLOPS](https://github.com/nakatamaho/dgemm_tutorial/blob/main/02_flops.md)が理論性能値でした。
