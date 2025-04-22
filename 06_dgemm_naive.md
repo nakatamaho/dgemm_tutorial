@@ -244,7 +244,9 @@ Benchmarking size 43...
 Benchmarking size 50...
 Benchmarking size 57...
 ...
-
+Benchmarking size 988...
+Benchmarking size 995...
+Benchmark complete. Results saved to dgemm_benchmark_results.csv
 ```
 dgemm_benchmark_results.csvというファイルができますので、プロットします。
 ```bash
@@ -255,4 +257,32 @@ python3 plot.py
 ## 結果
 
 ![DGEMM ベンチマークプロット](06/dgemm_benchmark_plot.png)
+
+## 結果の分析
+
+上記プロットおよびベンチマーク結果から、行列サイズ \(N\) に対する DGEMM 性能はキャッシュ階層に応じた３つの領域に分かれることが明確に読み取れます。
+
+1. **理論値に遠く及ばない性能**
+  - binary64(倍精度)で[1.89 TFLOPS](https://github.com/nakatamaho/dgemm_tutorial/blob/main/02_flops.md)が理論性能値でした。    
+  - 最大でも約 0.766 GFLOPSにとどまり、理論性能の約 0.04 %にすぎません。
+    
+2. **小規模領域（\(N \le 43\)：L1キャッシュ内）**  
+   - 行列サイズの増加に伴い性能はほぼ線形に上昇し、平均 **0.365 GFLOPS**（標準偏差 0.216）とばらつきが大きい。  
+   - L1キャッシュ（32 KB）に収まるワーキングセットの理論上限は
+$$
+       2 \times N^2 \times 8 \le 32\,768
+       \quad\Longrightarrow\quad
+       N \lesssim \sqrt{2\,048}\approx45
+$$ 
+     ですが、実際にはキャッシュ競合や管理オーバーヘッドを考慮して **\(N=43\)** でピーク **0.766 GFLOPS** を記録しており、この値が実効的な境界と一致しています。  
+
+3. **中規模領域（\(44 \le N \le 128\)：L2キャッシュ内）**  
+   - L2キャッシュ（256 KB）にワーキングセットが収まるためメモリアクセスが安定し、平均 **0.737 GFLOPS**（標準偏差 0.015）と非常に小さいばらつき。  
+   - プロセッサのピーク性能に近い状態を維持し、演算ユニットを効率よく活用できています。  
+
+4. **大規模領域（\(N > 128\)：L3キャッシュ／メインメモリ）**  
+   - ワーキングセットがL3キャッシュ（8 MB）を超えるとわずかに性能が低下し、平均 **0.738 GFLOPS**（標準偏差 0.007）で安定。  
+   - 特に \(N\approx600\) 前後では一時的に約 **0.725 GFLOPS** まで落ち込むものの、大規模行列処理としては実用上問題ない水準です。  
+
+
 
