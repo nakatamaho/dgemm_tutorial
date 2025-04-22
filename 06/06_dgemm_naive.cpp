@@ -105,12 +105,18 @@ int main() {
     // CSV形式のヘッダーを出力
     csv_file << "m,n,k,GFLOPS1,GFLOPS2,GFLOPS3,GFLOPS4,GFLOPS5" << std::endl;
     
-    // 1から1000まで7ずつのサイズを生成(正方行列用)
     std::vector<int> sizes;
-    for (int size = 1; size <= 1000; size += 7) {
+
+    // 1～128まではすべて含める
+    for (int size = 1; size <= 128; ++size) {
         sizes.push_back(size);
     }
-    
+
+    // 129以降は元のステップ幅7を維持（128 + 7 = 135 から開始）
+    for (int size = 135; size <= 1000; size += 7) {
+        sizes.push_back(size);
+    }
+
     const int num_trials = 5;  // 5回の試行
     std::mt19937 mt(std::random_device{}());
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
