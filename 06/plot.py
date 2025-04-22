@@ -8,17 +8,15 @@ import os
 def get_cpu_info():
     """CPUの情報を取得する関数"""
     cpu_info = "Unknown CPU"
-
     if platform.system() == "Linux":
         try:
             with open("/proc/cpuinfo", "r") as f:
                 for line in f:
                     if "model name" in line:
-                        cpu_info = line.split(":")[1].strip()
+                        cpu_info = line.split(":", 1)[1].strip()
                         break
         except:
             pass
-
     elif platform.system() == "Darwin":  # macOS
         try:
             output = subprocess.check_output(
@@ -28,7 +26,6 @@ def get_cpu_info():
                 cpu_info = output
         except:
             pass
-
     elif platform.system() == "Windows":
         try:
             output = subprocess.check_output(["wmic", "cpu", "get", "name"]).decode()
@@ -38,7 +35,6 @@ def get_cpu_info():
                 cpu_info = platform.processor()
             except:
                 pass
-
     return cpu_info
 
 def read_and_plot_csv(csv_file="dgemm_benchmark_results.csv"):
@@ -51,7 +47,7 @@ def read_and_plot_csv(csv_file="dgemm_benchmark_results.csv"):
     df = pd.read_csv(csv_file)
     gflops_cols = [c for c in df.columns if "GFLOPS" in c]
     df["mean_gflops"] = df[gflops_cols].mean(axis=1)
-    df["std_gflops"] = df[gflops_cols].std(axis=1)
+    df["std_gflops"]  = df[gflops_cols].std(axis=1)
 
     # CPU情報
     cpu_info = get_cpu_info()
@@ -64,32 +60,50 @@ def read_and_plot_csv(csv_file="dgemm_benchmark_results.csv"):
 
     # グラフ描画
     plt.figure(figsize=(12, 8))
-    plt.plot(df["m"], df["mean_gflops"], "o-", markersize=4, linewidth=1.5, label="Mean Performance")
+    plt.plot(df["m"], df["mean_gflops"],
+             "o-", markersize=4, linewidth=1.5,
+             label="Mean Performance", zorder=2)
 
-    # キャッシュ境界（L1/L2, L2/L3, L3/Memory）を示す縦線
-    for boundary in [43, 128, 319]:
-        plt.axvline(x=boundary, color="gray", linestyle="--", linewidth=1)
+    # キャッシュ境界（L1/L2, L2/L3, L3/Memory）を示す縦線とラベル
+    boundaries = [
+        (43, 'L1'),
+        (128, 'L2'),
+        (319, 'L3'),
+    ]
+    ymin, ymax = plt.ylim()
+    for x, label in boundaries:
+        plt.axvline(x=x, color="black", linestyle="--", linewidth=1, zorder=1)
+        plt.text(
+            x + 2,               # 少し右にずらす
+            ymax - (ymax - ymin) * 0.05,  # 上端から5%下
+            label,
+            rotation=90,
+            verticalalignment="top",
+            fontsize=12,
+            backgroundcolor="white",
+            zorder=3
+        )
 
-    plt.grid(True, linestyle="--", alpha=0.7)
+    plt.grid(True, linestyle="--", alpha=0.7, zorder=0)
     plt.title(f"DGEMM Performance (1–1000 Matrix Size) on {cpu_info}", fontsize=16)
     plt.xlabel("Matrix Size (N×N)", fontsize=14)
     plt.ylabel("Performance (GFLOPS)", fontsize=14)
 
     # ピーク性能のハイライト
-    peak_idx = df["mean_gflops"].idxmax()
-    peak_size = df.loc[peak_idx, "m"]
-    peak_gflops = df.loc[peak_idx, "mean_gflops"]
-    plt.scatter([peak_size], [peak_gflops], color="red", s=100, zorder=5,
-                label=f"Peak: {peak_gflops:.4f} GFLOPS at size {peak_size}")
+    peak_idx   = df["mean_gflops"].idxmax()
+    peak_size  = df.loc[peak_idx, "m"]
+    peak_gflops= df.loc[peak_idx, "mean_gflops"]
+    plt.scatter(
+        [peak_size], [peak_gflops],
+        color="red", s=100, zorder=4,
+        label=f"Peak: {peak_gflops:.4f} GFLOPS at size {peak_size}"
+    )
 
     plt.legend(loc="best", fontsize=12)
-
     output_file = "dgemm_benchmark_simple_plot.png"
     plt.savefig(output_file, dpi=300)
     print(f"Performance visualization saved to {output_file}")
-
     return df
 
 if __name__ == "__main__":
     read_and_plot_csv()
-
