@@ -229,11 +229,10 @@ int main() {
 
 ```bash
 # 最適化オプションを追加してバイナリ出力ディレクトリに生成
-g++ -O3 -march=native 06_dgemm_naive.cpp -o 06_dgemm_naive
+g++ -O2 -march=native 06_dgemm_naive.cpp -o 06_dgemm_naive
 
 # ベンチマーク実行
 ./06_dgemm_naive
-OpenMP is not enabled.
 OpenMP is not enabled.
 Benchmarking size 1...
 Benchmarking size 2...
@@ -274,12 +273,8 @@ python3 plot.py
 1. **理論値に遠く及ばない性能**
   - binary64(倍精度)で[1.89 TFLOPS](https://github.com/nakatamaho/dgemm_tutorial/blob/main/02_flops.md)が理論性能値でした。   
   - 最大でも約 1.61 GFLOPSにとどまり、理論性能の約 1.14 %にすぎません。
-  - 1コアの理論性能は59.2GFLOPSです
-$$\bigl(4\ \text{elements} \times 2\ \text{FMA演算}\bigr)
-\times 2\ \text{パイプライン}
-\times 3.7\times10^{9}
-= 59.2\ \mathrm{GFLOPS／core}
-$$
+  - 1コアでSIMD(AVX2)を使わない場合は理論性能は7.4GFLOPSとなります。
+
 2. **L1 キャッシュ内領域 ($$N \le 43$$)**  
    - **平均性能**：4.55 GFLOPS （標準偏差 2.02）  
    - **最小／最大**：0.05 GFLOPS／7.43 GFLOPS  
