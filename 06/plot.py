@@ -81,6 +81,7 @@ def read_and_plot_csv(csv_file="dgemm_benchmark_results.csv"):
             fontsize=12,
             color="red",                             # 文字色を赤に
             backgroundcolor="white",
+            fontweight="bold", 
             zorder=3
         )
 
