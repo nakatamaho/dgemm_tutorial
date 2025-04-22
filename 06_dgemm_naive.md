@@ -308,26 +308,30 @@ $$2N^2\times8 = 128\,\mathrm{MB}\Rightarrow N\approx2896$$
      と大きなばらつきを含む。
 
 4. **L2キャッシュ領域**  
-   - 条件：$$2N^2\times8 \le 16\ \mathrm{MB}\quad (362 \lesssim N \le 1024)$$  
+   - 条件：
+$$2N^2\times8 \le 16\ \mathrm{MB}\quad (362 \lesssim N \le 1024)$$  
    - ワーキングセットがL2キャッシュに収まるため、キャッシュミスが抑えられ最も安定して高い性能レベルを維持。  
    - 平均性能は  
-     $$6.72\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$  
+$$6.72\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$  
      で、ピーク近傍の高い性能を継続。
 
 5. **L3キャッシュ領域**  
-   - 条件：$$2N^2\times8 \le 128\ \mathrm{MB}\quad (1024 \lesssim N \le 2896)$$  
+   - 条件：
+$$2N^2\times8 \le 128\ \mathrm{MB}\quad (1024 \lesssim N \le 2896)$$  
    - データがL3キャッシュ内にはあるもののL2を超えるため、ミス率上昇に伴い性能が漸減。  
-   - $$N\approx1024$$付近では約$$6.77\ \mathrm{GFLOPS}$$を維持するものの、  
-     $$N\approx2896$$付近では約$$3.37\ \mathrm{GFLOPS}$$まで低下。  
+   -
+$$N\approx1024$$付近では約$$6.77\ \mathrm{GFLOPS}$$を維持するものの、  
+$$N\approx2896$$付近では約$$3.37\ \mathrm{GFLOPS}$$まで低下。  
    - 平均性能は  
-     $$4.22\ \mathrm{GFLOPS}\quad(\sigma=1.04\ \mathrm{GFLOPS})$$  
+$$4.22\ \mathrm{GFLOPS}\quad(\sigma=1.04\ \mathrm{GFLOPS})$$  
      と大きく変動する移行領域。
 
 6. **メインメモリ領域**  
-   - 条件：$$N \gtrsim 2896$$  
+   - 条件：
+$$N \gtrsim 2896$$  
    - ワーキングセットがL3を超え、DRAM帯域幅が性能制約となる。  
    - 平均性能は  
-     $$3.65\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$  
+$$3.65\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$  
      でほぼ横ばいになる。
 
 ## 注意点
