@@ -12,86 +12,14 @@ C ← α×A×B + β×C
 - C は m×n の行列
 - α, β はスカラー値
 
-残念ながらナイーブな実装では全く性能が出ません。
+## ソースコード
+[https://github.com/nakatamaho/dgemm_tutorial/tree/main/06](https://github.com/nakatamaho/dgemm_tutorial/tree/main/06)
 
 ## 実装の説明
 
 以下に、最も単純なDGEMM実装を示します。この実装では、行列AとBが転置されていない（NN: Not transposed）場合のみを考慮しています。
 
-```cpp
-#include <chrono>
-#include <cmath>
-#include <iostream>
-#include <random>
-#include <vector>
-#include <algorithm>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
-// 最も単純なDGEMM実装（NN版のみ）
-void dgemm_simple_nn(int m, int n, int k, double alpha, const double *A, int lda,
-                     const double *B, int ldb, double beta, double *C, int ldc) {
-    // m: 行列Cの行数
-    // n: 行列Cの列数
-    // k: 行列Aの列数 = 行列Bの行数
-    // alpha, beta: スカラー係数
-    // A: m×k行列
-    // B: k×n行列
-    // C: m×n行列
-    // lda, ldb, ldc: 各行列の先頭次元（leading dimension）
-    
-    // 簡単なケースの処理
-    if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
-        return;  // 何もしない
-    }
-    
-    // alpha == 0の場合
-    if (alpha == 0.0) {
-        if (beta == 0.0) {
-            // C = 0
-            for (int j = 0; j < n; j++) {
-                for (int i = 0; i < m; i++) {
-                    C[i + j * ldc] = 0.0;
-                }
-            }
-        } else {
-            // C = beta * C
-            for (int j = 0; j < n; j++) {
-                for (int i = 0; i < m; i++) {
-                    C[i + j * ldc] = beta * C[i + j * ldc];
-                }
-            }
-        }
-        return;
-    }
-    
-    // メインの行列積計算: C = alpha * A * B + beta * C
-    for (int j = 0; j < n; j++) {
-        // betaによるCの初期化
-        if (beta == 0.0) {
-            for (int i = 0; i < m; i++) {
-                C[i + j * ldc] = 0.0;
-            }
-        } else if (beta != 1.0) {
-            for (int i = 0; i < m; i++) {
-                C[i + j * ldc] = beta * C[i + j * ldc];
-            }
-        }
-        
-        // 行列積の計算
-        for (int l = 0; l < k; l++) {
-            if (B[l + j * ldb] != 0.0) {
-                double temp = alpha * B[l + j * ldb];
-                for (int i = 0; i < m; i++) {
-                    C[i + j * ldc] += temp * A[i + l * lda];
-                }
-            }
-        }
-    }
-}
-```
 
 ## 実装の解説
 
@@ -296,3 +224,61 @@ int main() {
 
     return 0;
 }
+```
+## コンパイルと実行とプロット
+
+```bash
+# 最適化オプションを追加してバイナリ出力ディレクトリに生成
+g++ -O3 -march=native 06_dgemm_naive.cpp -o 06_dgemm_naive
+
+# ベンチマーク実行
+./06_dgemm_naive
+OpenMP is not enabled.
+Benchmarking size 1...
+Benchmarking size 8...
+Benchmarking size 15...
+Benchmarking size 22...
+Benchmarking size 29...
+Benchmarking size 36...
+Benchmarking size 43...
+Benchmarking size 50...
+Benchmarking size 57...
+...
+Benchmarking size 988...
+Benchmarking size 995...
+Benchmark complete. Results saved to dgemm_benchmark_results.csv
+```
+dgemm_benchmark_results.csvというファイルができますので、プロットします。
+```bash
+# プロット生成
+python3 plot.py
+```
+
+## 結果
+
+![DGEMM ベンチマークプロット](06/dgemm_benchmark_plot.png)
+
+## 結果の分析
+
+上記プロットおよびベンチマーク結果から、行列サイズ \(N\) に対する DGEMM 性能はキャッシュ階層に応じた３つの領域に分かれることが明確に読み取れます。
+
+1. **理論値に遠く及ばない性能**
+  - binary64(倍精度)で[1.89 TFLOPS](https://github.com/nakatamaho/dgemm_tutorial/blob/main/02_flops.md)が理論性能値でした。    
+  - 最大でも約 0.766 GFLOPSにとどまり、理論性能の約 0.04 %にすぎません。
+    
+2. **小規模領域（N <= 43)：L1キャッシュ内）**  
+   - 行列サイズの増加に伴い性能はほぼ線形に上昇し、平均 **0.365 GFLOPS**（標準偏差 0.216）とばらつきが大きい。  
+   - L1キャッシュ（32 KB）に収まるワーキングセットの理論上限は
+$$2 \times N^2 \times 8 \le 32\,768
+\quad\Longrightarrow\quad
+N \lesssim \sqrt{2\,048}\approx45$$ 
+     ですが、実際にはキャッシュ競合や管理オーバーヘッドを考慮して **\(N=43\)** でピーク **0.766 GFLOPS** を記録しており、この値が実効的な境界と一致しています。  
+
+3. **中規模領域（44 <= N <= 128：L2キャッシュ内）**  
+   - L2キャッシュ（256 KB）にワーキングセットが収まるためメモリアクセスが安定し、平均 **0.737 GFLOPS**（標準偏差 0.015）と非常に小さいばらつき。
+     
+4. **大規模領域（N >= 128：L3キャッシュ／メインメモリ）**  
+   - ワーキングセットがL3キャッシュ（8 MB）を超えるとわずかに性能が低下し、平均 **0.738 GFLOPS**（標準偏差 0.007）で安定。  
+
+
+
