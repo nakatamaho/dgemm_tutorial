@@ -302,8 +302,7 @@ $$2N^2\times8 = 128 \mathrm{MB}\Rightarrow N\approx2896$$
 $$2N^2\times8 \le 2\,048\ \mathrm{kB}\quad (N \lesssim 362)$$  
    - 行列が完全にL1キャッシュ内に収まるため、FMAのみを使い、SIMDを使わないが、計算自体に滞りはない。  
    - 性能は行列サイズ増加とともにほぼ線形に上昇し、
-$$N=85$$でピークの6.7990GFLOPS  
-     を記録。  
+$$N=85$$でピークの6.7990GFLOPSを記録。  
    - この領域における平均性能は  
 $$5.38\ \mathrm{GFLOPS}\quad(\sigma=1.62\ \mathrm{GFLOPS})$$  
      と大きなばらつきを含む。
