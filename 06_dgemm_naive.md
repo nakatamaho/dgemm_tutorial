@@ -273,9 +273,7 @@ python3 plot.py
 プロットおよびベンチマーク結果から，行列サイズ $$N$$ に対する DGEMM 性能はキャッシュ階層ごとに大まかに分類できます。
 
 新たに取得したプロットおよびベンチマーク結果から、行列サイズ $$N$$ に対する DGEMM 性能はキャッシュ階層ごとに以下の４つの領域に分かれることが確認できます。各領域の境界は、ワーキングセットサイズ  
-$$
-2N^2 \times 8\ (\mathrm{Bytes})
-$$  
+$$2N^2 \times 8\ (\mathrm{Bytes})$$  
 とキャッシュ容量との関係からも概ね整合しています。
 
 
@@ -283,15 +281,15 @@ $$
 
    - **L1 キャッシュ**：2048 KB
 L1境界：
-$$2N^2\times8 = 2{,}048\,\mathrm{kB}\;\Rightarrow\;N\approx362$$  
+$$2N^2\times8 = 2{,}048\,\mathrm{kB} \Rightarrow N\approx362$$  
 
    - **L2 キャッシュ**：16 MB
 L2境界：
-$$2N^2\times8 = 16\,\mathrm{MB}\;\Rightarrow\;N=1024$$  
+$$2N^2\times8 = 16\,\mathrm{MB}\Rightarrow N=1024$$  
 
    - **L3 キャッシュ**：128 MB
 L3境界：
-$$2N^2\times8 = 128\,\mathrm{MB}\;\Rightarrow\;N\approx2896$$  
+$$2N^2\times8 = 128\,\mathrm{MB}\Rightarrow N\approx2896$$  
 
 2. **理論値に遠く及ばない性能**
    - binary64(倍精度)で[1.89 TFLOPS](https://github.com/nakatamaho/dgemm_tutorial/blob/main/02_flops.md)が理論性能値でした。
