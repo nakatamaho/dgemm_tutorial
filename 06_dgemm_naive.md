@@ -299,7 +299,7 @@ $$2N^2\times8 = 128 \mathrm{MB}\Rightarrow N\approx2896$$
 
 3. **L1キャッシュ領域**  
    - 条件：
-$$2N^2\times8 \le 2\,048\ \mathrm{kB}\quad (\,N \lesssim 362\,)$$  
+$$2N^2\times8 \le 2\,048\ \mathrm{kB}\quad (N \lesssim 362)$$  
    - 行列が完全にL1キャッシュ内に収まるため、FMAのみを使い、SIMDを使わないが、計算自体に滞りはない。  
    - 性能は行列サイズ増加とともにほぼ線形に上昇し、
 $$N=85$$でピークの  
@@ -321,9 +321,8 @@ $$6.72\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$
    - 条件：
 $$2N^2\times8 \le 128\ \mathrm{MB}\quad (1024 \lesssim N \le 2896)$$  
    - データがL3キャッシュ内にはあるもののL2を超えるため、ミス率上昇に伴い性能が漸減。  
-   -
-$$N\approx1024$$付近では約$$6.77\ \mathrm{GFLOPS}$$を維持するものの、  
-$$N\approx2896$$付近では約$$3.37\ \mathrm{GFLOPS}$$まで低下。  
+   -$$N\approx1024$$付近では約6.77GFLOPS}を維持するものの、  
+$$N\approx2896$$付近では約3.37GFLOPS}まで低下。  
    - 平均性能は  
 $$4.22\ \mathrm{GFLOPS}\quad(\sigma=1.04\ \mathrm{GFLOPS})$$  
      と大きく変動する移行領域。
