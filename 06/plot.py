@@ -86,7 +86,7 @@ def read_and_plot_csv(csv_file="dgemm_benchmark_results.csv"):
         )
 
     plt.grid(True, linestyle="--", alpha=0.7, zorder=0)
-    plt.title(f"DGEMM Performance on {cpu_info}", fontsize=16)
+    plt.title(f"Naive DGEMM Performance on {cpu_info}", fontsize=16)
     plt.xlabel("Matrix Size (N×N)", fontsize=14)
     plt.ylabel("Performance (GFLOPS)", fontsize=14)
 
