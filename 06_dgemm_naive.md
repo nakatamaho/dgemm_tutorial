@@ -256,7 +256,7 @@ python3 plot.py
 
 ## 結果
 
-![DGEMM ベンチマークプロット](06/dgemm_benchmark_plot.png)
+![DGEMM ベンチマークプロット](06/dgemm_benchmark_simple_plot.png)
 
 ## 結果の分析
 
