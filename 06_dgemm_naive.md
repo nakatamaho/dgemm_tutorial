@@ -12,7 +12,8 @@ C ← α×A×B + β×C
 - C は m×n の行列
 - α, β はスカラー値
 
-残念ながらナイーブな実装では全く性能が出ません。
+## ソースコード
+[https://github.com/nakatamaho/dgemm_tutorial/tree/main/06](ソースコード)
 
 ## 実装の説明
 
