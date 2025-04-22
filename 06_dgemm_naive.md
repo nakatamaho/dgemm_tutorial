@@ -13,7 +13,7 @@ C ← α×A×B + β×C
 - α, β はスカラー値
 
 ## ソースコード
-[https://github.com/nakatamaho/dgemm_tutorial/tree/main/06](ソースコード)
+[https://github.com/nakatamaho/dgemm_tutorial/tree/main/06](https://github.com/nakatamaho/dgemm_tutorial/tree/main/06)
 
 ## 実装の説明
 
