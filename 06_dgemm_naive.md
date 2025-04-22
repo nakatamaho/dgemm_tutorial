@@ -294,9 +294,8 @@ $$2N^2 \times 8 \le 32\,768
      と計算され，実測とよく一致しています。
 
 3. **L2 キャッシュ内領域**  
-   - 境界：  
-     $$
-     2N^2\times8 \le 16\,777\,216
+   - 境界：
+$$2N^2\times8 \le 16\,777\,216
      \quad\Longrightarrow\quad
      N \lesssim \sqrt{\frac{16\,777\,216}{16}}\approx1024
      $$  
@@ -306,8 +305,7 @@ $$2N^2 \times 8 \le 32\,768
 
 4. **L3 キャッシュ内領域** 
    - 境界：  
-     $$
-     2N^2\times8 \le 134\,217\,728
+$$2N^2\times8 \le 134\,217\,728
      \quad\Longrightarrow\quad
      N \lesssim \sqrt{\frac{134\,217\,728}{16}}\approx2896
      $$  
