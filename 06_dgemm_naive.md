@@ -19,80 +19,7 @@ C ← α×A×B + β×C
 
 以下に、最も単純なDGEMM実装を示します。この実装では、行列AとBが転置されていない（NN: Not transposed）場合のみを考慮しています。
 
-```cpp
-#include <chrono>
-#include <cmath>
-#include <iostream>
-#include <random>
-#include <vector>
-#include <algorithm>
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
-// 最も単純なDGEMM実装（NN版のみ）
-void dgemm_simple_nn(int m, int n, int k, double alpha, const double *A, int lda,
-                     const double *B, int ldb, double beta, double *C, int ldc) {
-    // m: 行列Cの行数
-    // n: 行列Cの列数
-    // k: 行列Aの列数 = 行列Bの行数
-    // alpha, beta: スカラー係数
-    // A: m×k行列
-    // B: k×n行列
-    // C: m×n行列
-    // lda, ldb, ldc: 各行列の先頭次元（leading dimension）
-    
-    // 簡単なケースの処理
-    if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
-        return;  // 何もしない
-    }
-    
-    // alpha == 0の場合
-    if (alpha == 0.0) {
-        if (beta == 0.0) {
-            // C = 0
-            for (int j = 0; j < n; j++) {
-                for (int i = 0; i < m; i++) {
-                    C[i + j * ldc] = 0.0;
-                }
-            }
-        } else {
-            // C = beta * C
-            for (int j = 0; j < n; j++) {
-                for (int i = 0; i < m; i++) {
-                    C[i + j * ldc] = beta * C[i + j * ldc];
-                }
-            }
-        }
-        return;
-    }
-    
-    // メインの行列積計算: C = alpha * A * B + beta * C
-    for (int j = 0; j < n; j++) {
-        // betaによるCの初期化
-        if (beta == 0.0) {
-            for (int i = 0; i < m; i++) {
-                C[i + j * ldc] = 0.0;
-            }
-        } else if (beta != 1.0) {
-            for (int i = 0; i < m; i++) {
-                C[i + j * ldc] = beta * C[i + j * ldc];
-            }
-        }
-        
-        // 行列積の計算
-        for (int l = 0; l < k; l++) {
-            if (B[l + j * ldb] != 0.0) {
-                double temp = alpha * B[l + j * ldb];
-                for (int i = 0; i < m; i++) {
-                    C[i + j * ldc] += temp * A[i + l * lda];
-                }
-            }
-        }
-    }
-}
-```
 
 ## 実装の解説
 
@@ -297,3 +224,6 @@ int main() {
 
     return 0;
 }
+
+## 結果
+
