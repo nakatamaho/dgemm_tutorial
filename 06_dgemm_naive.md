@@ -224,6 +224,18 @@ int main() {
 
     return 0;
 }
+```
+## コンパイルと実行とプロット
 
+```bash
+# 最適化オプションを追加してバイナリ出力ディレクトリに生成
+g++ -O3 -march=native 06_dgemm_naive.cpp -o 06_dgemm_naive
+
+# ベンチマーク実行
+./06_dgemm_naive
+
+# プロット生成
+python3 plot.py
+```
 ## 結果
 
