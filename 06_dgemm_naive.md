@@ -279,11 +279,7 @@ python3 plot.py
    - **最小／最大**：0.05 GFLOPS／7.43 GFLOPS  
    - 行列サイズの増加に伴い性能は概ね上昇しますが、ループオーバーヘッドやキャッシュ競合の影響で大きなばらつきが見られます。  
    - L1 キャッシュ（32 KB）にワーキングセットが収まる理論上の境界は
-$$
-       2N^2 \times 8 \le 32\,768
-       \quad\Longrightarrow\quad
-       N \lesssim \sqrt{\frac{32\,768}{16}}\approx45
-$$  
+$$2N^2 \times 8 \le 32\,768 \quad\Longrightarrow\quad N \lesssim \sqrt{\frac{32\,768}{16}}\approx45$$  
      と計算され、実測とよく一致します。
 
 3. **L2 キャッシュ内領域 ($$44 \le N \le 128$$)**  
