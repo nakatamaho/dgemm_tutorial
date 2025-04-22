@@ -319,7 +319,7 @@ $$6.72\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$
    - 条件：
 $$2N^2\times8 \le 128\ \mathrm{MB}\quad (1024 \lesssim N \le 2896)$$  
    - データがL3キャッシュ内にはあるもののL2を超えるため、ミス率上昇に伴い性能が漸減。
-   -$$N\approx1024$$付近では約6.77GFLOPSを維持するものの、  
+   - $$N\approx1024$$付近では約6.77GFLOPSを維持するものの、  
 $$N\approx2896$$付近では約3.37GFLOPSまで低下。  
    - 平均性能は  
 $$4.22\ \mathrm{GFLOPS}\quad(\sigma=1.04\ \mathrm{GFLOPS})$$  
