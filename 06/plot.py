@@ -75,9 +75,8 @@ def read_and_plot_csv(csv_file="dgemm_benchmark_results.csv"):
         plt.axvline(x=x, color="black", linestyle="--", linewidth=1, zorder=1)
         plt.text(
             x + 2,               # 少し右にずらす
-            ymax - (ymax - ymin) * 0.05,  # 上端から5%下
+            ymax - (ymax - ymin) * 0.3,  # 上端から5%下
             label,
-            rotation=90,
             verticalalignment="top",
             fontsize=12,
             backgroundcolor="white",
