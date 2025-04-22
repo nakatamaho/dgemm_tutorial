@@ -275,8 +275,7 @@ python3 plot.py
   - binary64(倍精度)で[1.89 TFLOPS](https://github.com/nakatamaho/dgemm_tutorial/blob/main/02_flops.md)が理論性能値でした。   
   - 最大でも約 1.61 GFLOPSにとどまり、理論性能の約 1.14 %にすぎません。
   - 1コアの理論性能は59.2GFLOPSです
-$$
-\bigl(4\ \text{elements} \times 2\ \text{FMA演算}\bigr)
+$$\bigl(4\ \text{elements} \times 2\ \text{FMA演算}\bigr)
 \times 2\ \text{パイプライン}
 \times 3.7\times10^{9}
 = 59.2\ \mathrm{GFLOPS／core}
