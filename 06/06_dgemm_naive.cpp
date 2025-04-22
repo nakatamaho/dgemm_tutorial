@@ -113,7 +113,7 @@ int main() {
     }
 
     // 129以降は元のステップ幅7を維持（128 + 7 = 135 から開始）
-    for (int size = 135; size <= 1000; size += 7) {
+    for (int size = 135; size <= 3500; size += 7) {
         sizes.push_back(size);
     }
 

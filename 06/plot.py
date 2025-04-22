@@ -66,9 +66,9 @@ def read_and_plot_csv(csv_file="dgemm_benchmark_results.csv"):
 
     # キャッシュ境界（L1/L2, L2/L3, L3/Memory）を示す縦線とラベル
     boundaries = [
-        (43, 'L1'),
-        (128, 'L2'),
-        (319, 'L3'),
+        (45, 'L1'),
+        (1024, 'L2'),
+        (2896, 'L3'),
     ]
     ymin, ymax = plt.ylim()
     for x, label in boundaries:
