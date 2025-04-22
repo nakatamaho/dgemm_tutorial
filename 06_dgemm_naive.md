@@ -52,7 +52,7 @@ $$C(i,j) = \beta \times C(i,j) + \alpha \times \sum_{l=0}^{k-1} \left( A(i,l) \t
 
 ## ベンチマークをとる
 
-以下のコードでvoid dgemm_simple_nnのベンチマークを取ります1から1000まで7ずつ正方行列として実行時間を測定します。
+以下のコードでvoid dgemm_simple_nnのベンチマークを取ります1から3500まで7ずつ正方行列として実行時間を測定します。
 ```cpp
 #include <chrono>
 #include <cmath>
