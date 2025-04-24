@@ -1,12 +1,12 @@
 # 最も簡単なDGEMM実装 (NN版)
 
-DGEMMのNN版は、行列の転置を行わない場合の実装です。この関数は以下の演算を行います：
+DGEMMのNN版は、行列の転置を行わない場合の実装です。この関数は以下の演算を行います:
 
 ```
 C ← α×A×B + β×C
 ```
 
-ここで：
+ここで:
 - A は m×k の行列
 - B は k×n の行列 
 - C は m×n の行列
@@ -17,17 +17,17 @@ C ← α×A×B + β×C
 
 ## 実装の説明
 
-以下に、最も単純なDGEMM実装を示します。この実装では、行列AとBが転置されていない（NN: Not transposed）場合のみを考慮しています。
+以下に、最も単純なDGEMM実装を示します。この実装では、行列AとBが転置されていない(NN: Not transposed)場合のみを考慮しています。
 
 
 
 ## 実装の解説
 
-この実装は、行列積の最も基本的なアルゴリズムを使用しています。行列Cの各要素 C(i,j) は以下のように計算されます：
+この実装は、行列積の最も基本的なアルゴリズムを使用しています。行列Cの各要素 C(i,j) は以下のように計算されます:
 
 $$C(i,j) = \beta \times C(i,j) + \alpha \times \sum_{l=0}^{k-1} \left( A(i,l) \times B(l,j) \right)$$
 
-ここで：
+ここで:
 - $C(i,j)$ は結果行列の $(i,j)$ 要素
 - $A(i,l)$ は第一入力行列の $(i,l)$ 要素
 - $B(l,j)$ は第二入力行列の $(l,j)$ 要素
@@ -281,15 +281,15 @@ $$2N^2 \times 8\ (\mathrm{Bytes})$$
 
    - **L1 キャッシュ**：2048 KB
 L1境界：
-$$2N^2\times8 = 2{,}048\,\mathrm{kB} \Rightarrow N\approx362$$  
+$$2N^2\times8 = 2{,}048 \mathrm{kB} \Rightarrow N\approx362$$  
 
    - **L2 キャッシュ**：16 MB
 L2境界：
-$$2N^2\times8 = 16\,\mathrm{MB}\Rightarrow N=1024$$  
+$$2N^2\times8 = 16 \mathrm{MB}\Rightarrow N=1024$$  
 
    - **L3 キャッシュ**：128 MB
 L3境界：
-$$2N^2\times8 = 128\,\mathrm{MB}\Rightarrow N\approx2896$$  
+$$2N^2\times8 = 128 \mathrm{MB}\Rightarrow N\approx2896$$  
 
 2. **理論値に遠く及ばない性能**
    - binary64(倍精度)で[1.89 TFLOPS](https://github.com/nakatamaho/dgemm_tutorial/blob/main/02_flops.md)が理論性能値でした。
@@ -299,12 +299,10 @@ $$2N^2\times8 = 128\,\mathrm{MB}\Rightarrow N\approx2896$$
 
 3. **L1キャッシュ領域**  
    - 条件：
-$$2N^2\times8 \le 2\,048\ \mathrm{kB}\quad (\,N \lesssim 362\,)$$  
+$$2N^2\times8 \le 2\,048\ \mathrm{kB}\quad (N \lesssim 362)$$  
    - 行列が完全にL1キャッシュ内に収まるため、FMAのみを使い、SIMDを使わないが、計算自体に滞りはない。  
    - 性能は行列サイズ増加とともにほぼ線形に上昇し、
-$$N=85$$でピークの  
-$$6.7990\ \mathrm{GFLOPS}$$  
-     を記録。  
+$$N=85$$でピークの6.7990GFLOPSを記録。  
    - この領域における平均性能は  
 $$5.38\ \mathrm{GFLOPS}\quad(\sigma=1.62\ \mathrm{GFLOPS})$$  
      と大きなばらつきを含む。
@@ -320,10 +318,9 @@ $$6.72\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$
 5. **L3キャッシュ領域**  
    - 条件：
 $$2N^2\times8 \le 128\ \mathrm{MB}\quad (1024 \lesssim N \le 2896)$$  
-   - データがL3キャッシュ内にはあるもののL2を超えるため、ミス率上昇に伴い性能が漸減。  
-   -
-$$N\approx1024$$付近では約$$6.77\ \mathrm{GFLOPS}$$を維持するものの、  
-$$N\approx2896$$付近では約$$3.37\ \mathrm{GFLOPS}$$まで低下。  
+   - データがL3キャッシュ内にはあるもののL2を超えるため、ミス率上昇に伴い性能が漸減。
+   - $$N\approx1024$$付近では約6.77GFLOPSを維持するものの、  
+$$N\approx2896$$付近では約3.37GFLOPSまで低下。  
    - 平均性能は  
 $$4.22\ \mathrm{GFLOPS}\quad(\sigma=1.04\ \mathrm{GFLOPS})$$  
      と大きく変動する移行領域。
@@ -331,10 +328,10 @@ $$4.22\ \mathrm{GFLOPS}\quad(\sigma=1.04\ \mathrm{GFLOPS})$$
 6. **メインメモリ領域**  
    - 条件：
 $$N \gtrsim 2896$$  
-   - ワーキングセットがL3を超え、DRAM帯域幅が性能制約となる。  
+   - 行列データがL3を超え、DRAM帯域幅が性能制約となる。  
    - 平均性能は  
 $$3.65\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$  
      でほぼ横ばいになる。
 
 ## 注意点
-1. gcc の-O3だと、FMAよりさらに最適化し、AVX2対応のための簡易的なブロッキングも行っていました。その結果は最大21.8864 GFLOPS (n=52)、平均は14.5531 GFLOPSでした。FMA,AVX2使用時の1coreの理論性能値は59.2GFLOPSなので、1コアの25%程度の性能を引き出すことができたことになりました。
+1. gcc の-O3だと、さらにSIMD最適化し4要素ずつ演算していました。結果は3倍程度高速化され、最大21.8864 GFLOPS (n=52)でした。
