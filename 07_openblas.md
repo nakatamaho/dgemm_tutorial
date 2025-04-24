@@ -353,5 +353,6 @@ cf. [OpenBLASのIssue](https://github.com/OpenMathLib/OpenBLAS/issues/3435)
 
 ![OpenBLAS DGEMM vs naive DGEMM](https://raw.githubusercontent.com/nakatamaho/dgemm_tutorial/main/07/dgemm_small.png)
 
-
-
+1. naive DGEMMはほとんどCPUの性能を引き出せてないことがわかります。最適化が重要だというのがわかります。
+2. OpenBLASも小さい行列サイズでは、性能を引き出すのに苦労しているようです。
+3. 全てのCPUに対応しつつ、実機で丁寧なチューニングを施すのは難しいのかもしれません。
