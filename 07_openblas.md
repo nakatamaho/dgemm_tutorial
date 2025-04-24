@@ -344,12 +344,15 @@ cf. [OpenBLASのIssue](https://github.com/OpenMathLib/OpenBLAS/issues/3435)
    - L1, L2程度に入るサイズだと、(N=360程度、N=1024程度)理論ピークになりにくいようです。
    - L3キャッシュが飽和するサイズにならないと、性能が高くならない。
 3. **性能のブレが大きい**
-   - メモリの使い方が悪いのか、意外と性能がぶれやすい。10回測定して、最大と最小FLOPSを得ますが、
+   - メモリの使い方が難しいようで、性能のブレが大きく見えました。10回測定して、最大と最小FLOPSを得ますが、特にに一回めの性能が悪くなりやすいようです。
 
 4. **LINPACKとの比較**
    [AMD Threadripper 3970x Compute Performance Linpack and NAMD](https://www.pugetsystems.com/labs/hpc/amd-threadripper-3970x-compute-performance-linpack-and-namd-1631/)によると、AMD BLIS library v 2.0を用いて、1.3233TFLOPSが得られています。なのでOpenBLASは、AMD BLISライブラリより良く性能を引き出せているようです。
 
 ## naive DGEMMと比較
 
+![OpenBLAS DGEMM vs naive DGEMM](https://raw.githubusercontent.com/nakatamaho/dgemm_tutorial/main/07/dgemm_small.png)
 
-
+1. naive DGEMMはほとんどCPUの性能を引き出せてないことがわかります。最適化が重要だというのがわかります。
+2. OpenBLASも小さい行列サイズでは、性能を引き出すのに苦労しているようです。
+3. 全てのCPUに対応しつつ、実機で丁寧なチューニングを施すのは難しいのかもしれません。
