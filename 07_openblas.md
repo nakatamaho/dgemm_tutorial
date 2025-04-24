@@ -296,17 +296,35 @@ int main(int argc, char *argv[]) {
 
 ```bash
 make
-./benchmark_openblas 2>&1 | tee openblas_results.csv
+OMP_NUM_THREADS=32 GOMP_CPU_AFFINITY=0-31:1 ./benchmark_openblas 2>&1 | tee openblas_results.csv
+python3 plot.py
 ```
+nが1から20000までの正方行列を用い、ベンチマークは10回行い、最大と最小を見ています。
 
+## 注意点
 
+- 行列のメモリ確保64バイトのアラインメントでmallocしています
+  ```cpp
+  #define ALIGNMENT 64
+  ...
+  static_cast<double *>(_mm_malloc(lda * k * sizeof(double), ALIGNMENT))
+  ```
+  AVX2では256bits=32bytesでアラインメントするのが正しいですが、余裕(?)を持って64バイトのアラインメントでメモリを確保します。
+  
+- ハイパースレッドを使わず、実行時にCPUのコアとスレッドを固定します
+  ```
+  OMP_NUM_THREADS=32 GOMP_CPU_AFFINITY=0-31:1 
+  ```
+演算器をフルに活用する場合、ハイパースレッドを使う意味はありません。逆に遅くなる場合もあります。もしハイパースレッドで高速化する場合は他にボトルネックがあるからです。
+また、CPUコアとスレッドを固定することで、無駄なスレッド割り当てが起こらず、若干性能が安定化する場合があります。
+cf. [OpenBLASのIssue](https://github.com/OpenMathLib/OpenBLAS/issues/3435)
 
-## OpenBLASの性能向上要因
+## OpenBLAS での dgemmのベンチマーク結果と分析
 
-OpenBLASがシンプルな実装と比較して大幅な性能向上を実現できる理由は以下の通りです：
+![DGEMM FLOPS](https://raw.githubusercontent.com/nakatamaho/dgemm_tutorial/main/07/dgemm_flops.png)
 
 1. **アーキテクチャ最適化**: 
-   - SIMD命令（SSE、AVX、AVX2、AVX-512など）を効率的に活用
+   - SIMD命令（SSE、AVX、AVX2）を効率的に活用
    - 各CPU世代に特化したアセンブリコードの使用
    - パイプラインの最適化
 
@@ -320,25 +338,10 @@ OpenBLASがシンプルな実装と比較して大幅な性能向上を実現で
    - 負荷バランスの最適化
    - NUMA（Non-Uniform Memory Access）アーキテクチャへの対応
 
-4. **アルゴリズムの最適化**:
-   - 数値的に安定した実装
-   - 特殊なケース（三角行列、対称行列など）に対する最適化
-   - 自動チューニング機能
-
-## 予想される結果の考察
-
-一般的に、OpenBLASとシンプル実装の性能比較では、以下のような傾向が見られます：
-
-1. **行列サイズと性能スケーリング**:
+4. **行列サイズと性能スケーリング**:
    - 小さな行列（N < 100）: OpenBLASの初期化オーバーヘッドにより、相対的な性能差は小さい
    - 中規模行列（100 < N < 500）: キャッシュ最適化の効果が現れ始め、性能差が拡大
    - 大規模行列（N > 500）: 並列処理とブロック化の効果が最大限に発揮され、最も大きな性能差
 
-2. **スレッド数と性能**:
-   - マルチコアCPUでは、OpenBLASは自動的に利用可能なコアを活用
-   - シングルスレッド実装との比較では、コア数が多いほど性能差が拡大
-
-3. **プラットフォームによる差異**:
-   - IntelプロセッサとAMDプロセッサで最適化の効果が異なる
-   - AVXやAVX2などの拡張命令セットをサポートするプロセッサでより高い性能
+## naive DGEMMと比較
 
