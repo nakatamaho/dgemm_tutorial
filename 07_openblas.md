@@ -299,7 +299,7 @@ make
 OMP_NUM_THREADS=32 GOMP_CPU_AFFINITY=0-31:1 ./benchmark_openblas 2>&1 | tee openblas_results.csv
 python3 plot.py
 ```
-nが1から20000までの正方行列を用い、ベンチマークは10回行い、最大と最小を見ています。
+nが1から20000までの正方行列を用い、ベンチマークは10回行い、最大FLOPSと最小FLOPSを見ています。
 
 ## 注意点
 
@@ -319,11 +319,9 @@ nが1から20000までの正方行列を用い、ベンチマークは10回行�
 また、CPUコアとスレッドを固定することで、無駄なスレッド割り当てが起こらず、若干性能が安定化する場合があります。
 cf. [OpenBLASのIssue](https://github.com/OpenMathLib/OpenBLAS/issues/3435)
 
-## OpenBLAS での dgemmのベンチマーク結果と分析
+## OpenBLAS での最適化
 
-![DGEMM FLOPS](https://raw.githubusercontent.com/nakatamaho/dgemm_tutorial/main/07/dgemm_flops.png)
-
-1. **アーキテクチャ最適化**: 
+1. **アーキテクチャ最適化**
    - SIMD命令（SSE、AVX、AVX2）を効率的に活用
    - 各CPU世代に特化したアセンブリコードの使用
    - パイプラインの最適化
@@ -334,14 +332,24 @@ cf. [OpenBLASのIssue](https://github.com/OpenMathLib/OpenBLAS/issues/3435)
    - プリフェッチの活用
 
 3. **マルチスレッド最適化**:
-   - 効率的なスレッド並列処理
-   - 負荷バランスの最適化
-   - NUMA（Non-Uniform Memory Access）アーキテクチャへの対応
+   - DGEMMではマルチスレッドにする、程度でパフォーマンスはほぼコア数に比例するように性能が出やすくまります。
 
-4. **行列サイズと性能スケーリング**:
-   - 小さな行列（N < 100）: OpenBLASの初期化オーバーヘッドにより、相対的な性能差は小さい
-   - 中規模行列（100 < N < 500）: キャッシュ最適化の効果が現れ始め、性能差が拡大
-   - 大規模行列（N > 500）: 並列処理とブロック化の効果が最大限に発揮され、最も大きな性能差
+## OpenBLAS での dgemmのベンチマーク結果と分析
+
+![DGEMM FLOPS](https://raw.githubusercontent.com/nakatamaho/dgemm_tutorial/main/07/dgemm_flops.png)
+
+1. **最大で理論ピーク性能の80%程度が出た**:
+   - 行列サイズ N=19961（m=n=k=19961）のときに、最大で 約1. 536 TFLOPSが得られています。これは理論ピーク（約1.894 TFLOPS）の約81 %に相当します。
+2. **性能を出すには大きな行列サイズが必要**
+   - L1, L2程度に入るサイズだと、(N=360程度、N=1024程度)理論ピークになりにくいようです。
+   - L3キャッシュが飽和するサイズにならないと、性能が高くならない。
+3. **性能のブレが大きい**
+   - メモリの使い方が悪いのか、意外と性能がぶれやすい。10回測定して、最大と最小FLOPSを得ますが、
+
+4. **LINPACKとの比較**
+   [AMD Threadripper 3970x Compute Performance Linpack and NAMD](https://www.pugetsystems.com/labs/hpc/amd-threadripper-3970x-compute-performance-linpack-and-namd-1631/)によると、AMD BLIS library v 2.0を用いて、1.3233TFLOPSが得られています。なのでOpenBLASは、AMD BLISライブラリより良く性能を引き出せているようです。
 
 ## naive DGEMMと比較
+
+
 
