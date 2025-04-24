@@ -1,6 +1,6 @@
 CXX = g++
 CXXFLAGS = -std=c++17 -O3 -march=native -fopenmp
-LDFLAGS = -lopenblas -lpthread -fopenmp
+LDFLAGS = OpenBLAS-0.3.29/libopenblas.a -lpthread -fopenmp
 
 all: benchmark_openblas benchmark_openblas_small
 
