@@ -18,7 +18,7 @@
 
 ```math
 $$
-p=\lceil m/b \rceil,\; q=\lceil k/b \rceil,\; r=\lceil n/b \rceil
+  p=\lceil m/b \rceil,\; q=\lceil k/b \rceil,\; r=\lceil n/b \rceil
 $$
 ```
 
@@ -53,7 +53,7 @@ $$
 
 ### 証明
 
-各 $`C_{ij}`$ の $(\alpha,\beta)$ 成分 ($`0\le\alpha<b_i`$, `$0\le\beta<b_j`$) を展開すると
+各 $`C_{ij}`$ の $(`\alpha`,`\beta`)$ 成分 ($`0\le\alpha<b_i`$, `$0\le\beta<b_j`$) を展開すると
 
 ```math
 $$
