@@ -16,7 +16,7 @@
 この階層構造が存在する理由は、速度と容量のトレードオフにあります。速いメモリは高価で小容量、遅いメモリは安価で大容量です。
 
 
-![メモリ改装の図](memory-hierarchy-diagram.svg)
+![メモリ階層の図](memory-hierarchy-diagram.svg)
 
 
 
