@@ -14,7 +14,7 @@
 
 ## 2 行列をブロックで表す
 
-まず、`$A\in\mathbb{R}^{m\times k}$` と `$B\in\mathbb{R}^{k\times n}$` を一様サイズ `b` の正方ブロックに分割するとします（端部は切り詰めるか不完全ブロックになります）。整数
+まず、$`A\in\mathbb{R}^{m\times k}`$ と `$B\in\mathbb{R}^{k\times n}$` を一様サイズ `b` の正方ブロックに分割するとします（端部は切り詰めるか不完全ブロックになります）。整数
 
 ```
 $p = \lceil m/b \rceil,\; q = \lceil k/b \rceil,\; r = \lceil n/b \rceil$
