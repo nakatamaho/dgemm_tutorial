@@ -65,7 +65,7 @@ $$
 
 ```math
 $$
-C_{ij} = \sum_{\ell=1}^{q} A_{i\ell} \, B_{\ell j},\qquad 1\le i\le p,\;1\le j\le r
+C_{ij} = \sum_{\ell=1}^{q} A_{i\ell} \, B_{\ell j}=
 \begin{bmatrix}
   A_{i1} & A_{i2} & \cdots & A_{iq}
 \end{bmatrix}
