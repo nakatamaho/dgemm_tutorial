@@ -74,8 +74,7 @@ C_{ij} = \sum_{\ell=1}^{q} A_{i\ell} \, B_{\ell j}=
   B_{2j} \\
   \vdots \\
   B_{qj}
-\end{bmatrix},
-\qquad(1\le i\le p,\;1\le j\le r)
+\end{bmatrix}
 $$
 ```
 
