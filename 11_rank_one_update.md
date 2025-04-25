@@ -18,7 +18,6 @@ $$ C_{ij} = \sum_{k=1}^{K} A_{ik} \times B_{kj} $$
 
 行列 $`A`$ の列ベクトル
 ```math
-$$
 a_k = A_{:,k} =
 \begin{bmatrix}
   a_{1k} \\
@@ -26,7 +25,8 @@ a_k = A_{:,k} =
   \vdots \\
   a_{m_R\,k}
 \end{bmatrix}
-$$
+```
+
 行列 $`B`$ の行ベクトル $`b_k^{\mathsf T} = B_{k,:}=\begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} `$
 
 
