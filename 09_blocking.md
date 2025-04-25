@@ -54,7 +54,7 @@ C=AB = \begin{bmatrix}
   A_{21} & A_{22} & \cdots & A_{2q} \\
   \vdots & \vdots & \ddots & \vdots \\
   A_{p1} & A_{p2} & \cdots & A_{pq}
-\end{bmatrix},\qquad
+\end{bmatrix}
  \begin{bmatrix}
   B_{11} & B_{12} & \cdots & B_{1r} \\
   B_{21} & B_{22} & \cdots & B_{2r} \\
