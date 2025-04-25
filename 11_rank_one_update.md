@@ -18,7 +18,10 @@ $$ C_{ij} = \sum_{k=1}^{K} A_{ik} \times B_{kj} $$
 
 行列 $`A`$ の列ベクトル $`a_k = A_{:,k}=\begin{bmatrix} a_{1k}\\ a_{2k}\\ \vdots\\ a_{m_R\,k} \end{bmatrix}`$
 
-行列 $`B`$ の行ベクトル $`b_k^{\mathsf T} = B_{k,:}`$ の外積 $`a_k\,b_k^{\mathsf T}`$ はランク 1 の行列とします。
+行列 $`B`$ の行ベクトル $`b_k^{\mathsf T} = B_{k,:}=\begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} `$
+
+
+これらの外積 $`a_k\,b_k^{\mathsf T}`$ はランク 1 の行列になります。
 
 全体の積は、それらランク 1 行列の和として書き直せます。
 
