@@ -47,16 +47,14 @@ $$
 
 各 $C_{ij}$ の $(\alpha,\beta)$ 成分 ($0\le\alpha<b_i$, $0\le\beta<b_j$) を展開すると
 
-$$ (C_{ij})_{\alpha\beta} = \sum_{x=0}^{k-1} A_{i\,\alpha,\,x}\;B_{x,\,j\,\beta}
-$$
+$$ (C_{ij})_{\alpha\beta} = \sum_{x=0}^{k-1} A_{i\,\alpha,\,x}\;B_{x,\,j\,\beta} $$
 
 ですが、添字 $x$ はブロック範囲 $b$ ごとに区切れます。$x=\ell b+\gamma$ と置けば $\ell$ がブロック番号 ($0\le\ell<q$)、$\gamma$ がブロック内オフセット ($0\le\gamma<b_{\ell}$) です。
 
 $$ (C_{ij})_{\alpha\beta}
   = \sum_{\ell=0}^{q-1}\;\sum_{\gamma=0}^{b_{\ell}-1}
      A_{i\ell,\,\alpha\gamma}\;B_{\ell j,\,\gamma\beta}
-  = \bigl(A_{i\ell} B_{\ell j}\bigr)_{\alpha\beta},
-$$
+  = \bigl(A_{i\ell} B_{\ell j}\bigr)_{\alpha\beta} $$
 
 よって主張の式が示されました。\qed
 
