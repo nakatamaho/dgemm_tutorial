@@ -43,12 +43,19 @@ $$
 
 ```math
 $$
-AB = \begin{bmatrix}
+C=AB = \begin{bmatrix}
   C_{11} & C_{12} & \cdots & C_{1r} \\
   C_{21} & C_{22} & \cdots & C_{2r} \\
   \vdots & \vdots & \ddots & \vdots \\
   C_{p1} & C_{p2} & \cdots & C_{pr}
 \end{bmatrix}
+=
+A = \begin{bmatrix}
+  A_{11} & A_{12} & \cdots & A_{1q} \\
+  A_{21} & A_{22} & \cdots & A_{2q} \\
+  \vdots & \vdots & \ddots & \vdots \\
+  A_{p1} & A_{p2} & \cdots & A_{pq}
+\end{bmatrix},\qquad
 $$
 ```
 
