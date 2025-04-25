@@ -65,6 +65,20 @@ $$
 ```
 
 で表せます。
+```math
+$$
+C_{ij} =
+\begin{bmatrix}
+  A_{i1} & A_{i2} & \cdots & A_{iq}
+\end{bmatrix}
+\begin{bmatrix}
+  B_{1j} \\
+  B_{2j} \\
+  \vdots \\
+  B_{qj}
+\end{bmatrix},
+\qquad(1\le i\le p,\;1\le j\le r)
+$$
 
 ---
 
