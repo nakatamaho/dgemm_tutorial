@@ -16,8 +16,17 @@ $$ C_{ij} = \sum_{k=1}^{K} A_{ik} \times B_{kj} $$
 
 ランク-1アップデート法は、行列乗算の効率を高めるための手法です。この手法の基本的な考え方は、行列乗算を一連のランク-1行列の加算として表現することです。
 
-行列 $`A`$ の列ベクトル $`a_k = A_{:,k}=\begin{bmatrix} a_{1k}\\ a_{2k}\\ \vdots\\ a_{m_R\,k} \end{bmatrix}`$
-
+行列 $`A`$ の列ベクトル
+```math
+$$
+a_k = A_{:,k} =
+\begin{bmatrix}
+  a_{1k} \\
+  a_{2k} \\
+  \vdots \\
+  a_{m_R\,k}
+\end{bmatrix}
+$$
 行列 $`B`$ の行ベクトル $`b_k^{\mathsf T} = B_{k,:}=\begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} `$
 
 
