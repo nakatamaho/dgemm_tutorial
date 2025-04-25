@@ -49,13 +49,18 @@ C=AB = \begin{bmatrix}
   \vdots & \vdots & \ddots & \vdots \\
   C_{p1} & C_{p2} & \cdots & C_{pr}
 \end{bmatrix}
-=
-A = \begin{bmatrix}
+= \begin{bmatrix}
   A_{11} & A_{12} & \cdots & A_{1q} \\
   A_{21} & A_{22} & \cdots & A_{2q} \\
   \vdots & \vdots & \ddots & \vdots \\
   A_{p1} & A_{p2} & \cdots & A_{pq}
 \end{bmatrix},\qquad
+ \begin{bmatrix}
+  B_{11} & B_{12} & \cdots & B_{1r} \\
+  B_{21} & B_{22} & \cdots & B_{2r} \\
+  \vdots & \vdots & \ddots & \vdots \\
+  B_{q1} & B_{q2} & \cdots & B_{qr}
+\end{bmatrix}
 $$
 ```
 
