@@ -16,14 +16,12 @@
 
 まず、$A\in\mathbb{R}^{m\times k}$ と $B\in\mathbb{R}^{k\times n}$ を**一様サイズ $b$** の正方ブロックに分割するとします（端部は切り詰めるか不完全ブロックになります）。整数
 
-$$
-  p=\lceil m/b \rceil,\; q=\lceil k/b \rceil,\; r=\lceil n/b \rceil
+$$ p=\lceil m/b \rceil,\; q=\lceil k/b \rceil,\; r=\lceil n/b \rceil
 $$
 
 を用いると，例えば $A$ は
 
-$$
-A = \begin{bmatrix}
+$$ A = \begin{bmatrix}
   A_{00} & \cdots & A_{0,q-1} \\
   \vdots & \ddots & \vdots \\
   A_{p-1,0} & \cdots & A_{p-1,q-1}
@@ -49,14 +47,12 @@ $$
 
 各 $C_{ij}$ の $(\alpha,\beta)$ 成分 ($0\le\alpha<b_i$, $0\le\beta<b_j$) を展開すると
 
-$$
-  (C_{ij})_{\alpha\beta} = \sum_{x=0}^{k-1} A_{i\,\alpha,\,x}\;B_{x,\,j\,\beta}
+$$ (C_{ij})_{\alpha\beta} = \sum_{x=0}^{k-1} A_{i\,\alpha,\,x}\;B_{x,\,j\,\beta}
 $$
 
 ですが、添字 $x$ はブロック範囲 $b$ ごとに区切れます。$x=\ell b+\gamma$ と置けば $\ell$ がブロック番号 ($0\le\ell<q$)、$\gamma$ がブロック内オフセット ($0\le\gamma<b_{\ell}$) です。
 
-$$
-  (C_{ij})_{\alpha\beta}
+$$ (C_{ij})_{\alpha\beta}
   = \sum_{\ell=0}^{q-1}\;\sum_{\gamma=0}^{b_{\ell}-1}
      A_{i\ell,\,\alpha\gamma}\;B_{\ell j,\,\gamma\beta}
   = \bigl(A_{i\ell} B_{\ell j}\bigr)_{\alpha\beta},
