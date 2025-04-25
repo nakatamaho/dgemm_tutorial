@@ -9,7 +9,8 @@
 
 ## 2 行列をブロックで表す
 
-まず、$`A \in \mathbb{R}^{m\times k}`$ と $`B \in \mathbb{R}^{k\times n}`$ を一様サイズ $`b`$ の正方ブロックに分割します。ブロック数は
+まず、$`A \in \mathbb{R}^{m\times k}`$ と $`B \in \mathbb{R}^{k\times n}`$ を一様サイズ $`b`$ の正方ブロックに分割します。
+$`A_{ij}`$と、$`B_{ij}`$は$`b\times b`$の正方行列になります。ブロック数は
 
 ```math
 $$
