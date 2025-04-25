@@ -80,7 +80,28 @@ $$
 >
 > で与えられる。
 
-*証明スケッチ* — 成分表示で展開し、積の添字をブロック番号とブロック内位置に分割すれば直ちに従います。\qed
+### 証明
+
+各 \$`C_{ij}`\$ の \$(\alpha,\beta)\$ 成分 (\$`0\le\alpha<b_i`\$, `$0\le\beta<b_j`\$) を展開すると
+
+```math
+$$
+  (C_{ij})_{\alpha\beta} = \sum_{x=0}^{k-1} A_{i\,\alpha,\,x}\;B_{x,\,j\,\beta}
+$$
+```
+
+しかし添字 \$`x`\$ をブロック単位 \$`b`\$ ごとに分解し、\$`x=\ell b+\gamma`\$ と置くと
+
+```math
+$$
+  (C_{ij})_{\alpha\beta}
+  = \sum_{\ell=0}^{q-1} \sum_{\gamma=0}^{b_{\ell}-1}
+     A_{i\ell,\alpha\gamma}\;B_{\ell j,\gamma\beta}
+  = \bigl(A_{i\ell} B_{\ell j}\bigr)_{\alpha\beta}.
+$$
+```
+
+よって定理が示されました。\qed
 
 ---
 
