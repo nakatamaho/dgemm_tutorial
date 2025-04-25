@@ -27,7 +27,7 @@ C = \sum_{k=1}^{K} a_k\,b_k^{\mathsf T}
 \quad
 (\text{with } a_k = A_{:,k},\; b_k^{\mathsf T} = B_{k,:})
 $$
-
+```
 
 ## メモリアクセス回数の比較
 
