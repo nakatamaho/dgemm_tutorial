@@ -39,7 +39,7 @@ GEMMとは、general matrix multiplicationの略で、Dはdouble precision(binar
 | 6️⃣     | [最も簡単な DGEMM 実装](06_dgemm_naive.md)  |
 | 7️⃣     | [OpenBLASの結果との比較](07_openblas.md)|
 | 8️⃣     | [DGEMM デバッグガイド - 最小構成と検証テクニック](08_dgemm_debugging_knowhow.md)  |
-| 6️⃣     | キャッシュ最適化（ブロック化編）                | `06_blocking.md`                         |
+| 9️⃣     | [ブロッキングの数理](09_blocking.md) |
 | 7️⃣     | SIMD/AVX ベクトル化編                          | `07_vectorization.md`                    |
 | 8️⃣     | OpenMP 並列化編                                 | `08_parallelization.md`                  |
 | 9️⃣     | 高度最適化：パラメータチューニング・プリフェッチ | `09_advanced_optim.md`                   |
