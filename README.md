@@ -39,9 +39,9 @@ GEMMとは、general matrix multiplicationの略で、Dはdouble precision(binar
 | 6️⃣     | [最も簡単な DGEMM 実装](06_dgemm_naive.md)  |
 | 7️⃣     | [OpenBLASの結果との比較](07_openblas.md)|
 | 8️⃣     | [DGEMM デバッグガイド - 最小構成と検証テクニック](08_dgemm_debugging_knowhow.md)  |
-| 9️⃣     | [ブロッキングの数理](09_blocking.md) |
-| 1️⃣0️⃣   | [DGEMM最適化:ランク-1アップデート法](10_rank_one_update.md) |
-| 1️⃣1️⃣    | [CPU メモリ階層](11_memory_hierarchy.md) |
+| 9️⃣    | [CPU メモリ階層](09_memory_hierarchy.md) |
+| 1️⃣0️⃣    | [ブロッキングの数理](10_blocking.md) |
+| 1️⃣1️⃣   | [DGEMM最適化:ランク-1アップデート法](11_rank_one_update.md) |
 | 8️⃣     | OpenMP 並列化編                                 | `08_parallelization.md`                  |
 | 9️⃣     | 高度最適化：パラメータチューニング・プリフェッチ | `09_advanced_optim.md`                   |
 
