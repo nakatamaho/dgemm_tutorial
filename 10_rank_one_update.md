@@ -29,6 +29,10 @@ C = \sum_{k=1}^{K} a_k\,b_k^{\mathsf T}
 $$
 ```
 
+```math
+C = \begin{bmatrix} C_{11} & C_{12} & \dots & C_{1\,n_R} \\ C_{21} & C_{22} & \dots & C_{2\,n_R} \\ \vdots & \vdots & \ddots & \vdots \\ C_{m_R\,1} & C_{m_R\,2} & \dots & C_{m_R\,n_R} \end{bmatrix} = \sum_{k=1}^{K} \; \begin{bmatrix} a_{1k}\\ a_{2k}\\ \vdots\\ a_{m_R\,k} \end{bmatrix} \! \begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} 
+``` 
+
 ## メモリアクセス回数の比較
 
 小行列(マイクロカーネル)のサイズを $`m_R \times n_R`$ とした場合のメモリアクセス回数を比較してみましょう。
