@@ -29,6 +29,7 @@ C = \sum_k \begin{bmatrix} a_{1k}\\ a_{2k}\\ \vdots\\ a_{m_R\,k} \end{bmatrix} \
 
 4x4の場合を考えてみましょう。
 rank-1アップデートでは、以下のように計算します。
+
 ```math
 C = \begin{bmatrix}
 C_{11} & C_{12} & C_{13} & C_{14} \\
