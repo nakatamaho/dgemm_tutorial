@@ -152,7 +152,7 @@ $n_R \times m_R$サイズのブロック行列で1回のrank-1更新（外積計
 特に正方行列ブロック（$`n_R = m_R`$）の場合、これは以下のように単純化されます：
 
 ```math
-n_R \geq \frac{R_{\text{comp}}}{R_{\text{load}}} \text{★}
+n_R \geq \frac{R_{\text{comp}}}{R_{\text{load}}} \cdots (\text{★})
 ```
 
 ここで：
