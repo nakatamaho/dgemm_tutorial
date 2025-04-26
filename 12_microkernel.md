@@ -5,6 +5,23 @@
 ## 1. 概要
 最内ループ（マイクロカーネル）では $`C = A\,B`$そして、大きさは$`C\in\mathbb{R}^{m_R\times n_R},\quad A\in\mathbb{R}^{m_R\times k_R},\quad B\in\mathbb{R}^{k_R\times n_R}`$です。 
 
+そして、
+行列 $`A`$ の列ベクトル
+```math
+a_k = A_{:,k} =
+\begin{bmatrix}
+  a_{1k} \\
+  a_{2k} \\
+  \vdots \\
+  a_{m_R\,k}
+\end{bmatrix}
+```
+行列 $`B`$ の行ベクトル 
+
+```math
+b_k^{\mathsf T} = B_{k,:}=\begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} 
+```
+と表して、
 ```math
 C = \sum_{k=1}^{K} \; \begin{bmatrix} a_{1k}\\ a_{2k}\\ \vdots\\ a_{m_R\,k} \end{bmatrix} \! \begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} 
 ```
