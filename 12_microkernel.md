@@ -6,7 +6,7 @@
 最内ループ（マイクロカーネル）では $`C = A\,B`$そして、大きさは$`C\in\mathbb{R}^{m_R\times n_R},\quad A\in\mathbb{R}^{m_R\times k_R},\quad B\in\mathbb{R}^{k_R\times n_R}`$です。 
 
 そして、
-行列 $`A`$ の列ベクトル
+行列 $`A`$ のk列だけ取り出した列ベクトル
 ```math
 \begin{bmatrix}
   a_{1k} \\
@@ -15,7 +15,7 @@
   a_{m_R\,k}
 \end{bmatrix}
 ```
-行列 $`B`$ の行ベクトル 
+行列 $`B`$ のk行だけ取り出した行ベクトル 
 
 ```math
 \begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} 
