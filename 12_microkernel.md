@@ -22,7 +22,7 @@
 ```
 と表して、
 ```math
-C =  \begin{bmatrix} a_{1k}\\ a_{2k}\\ \vdots\\ a_{m_R\,k} \end{bmatrix} \! \begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} 
+C = \sum_k \begin{bmatrix} a_{1k}\\ a_{2k}\\ \vdots\\ a_{m_R\,k} \end{bmatrix} \! \begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} 
 ```
 
 という **rank-1 update** を $`k`$ 回繰り返して行列 $`C`$ を計算します。
