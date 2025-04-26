@@ -102,7 +102,7 @@ def read_and_plot_csv(csv_file="dgemm_naive_benchmark_results.csv"):
     )
     
     plt.legend(loc="best", fontsize=12)
-    output_file = "dgemm_naive_benchmark_plot.png"
+    output_file = "dgemm_naive_benchmark_results.png"
     plt.savefig(output_file, dpi=300)
     print(f"Performance visualization saved to {output_file}")
     
