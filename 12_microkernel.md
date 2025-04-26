@@ -134,32 +134,36 @@ a_{41}\,b_{12}
 $n_R \times m_R$サイズのブロック行列で1回のrank-1更新（外積計算）を考えると：
 
 1. **ロード量**：
-   - A行列から$n_R$要素（1列分）
-   - B行列から$m_R$要素（1行分）
-   - 合計：$n_R + m_R$要素
+   - A行列から$`n_R`$要素（1列分）
+   - B行列から$`m_R`$要素（1行分）
+   - 合計：$`n_R + m_R`$要素
 
 2. **演算量**：
-   - C行列の$n_R \times m_R$個の要素を更新
+   - C行列の$`n_R \times m_R`$個の要素を更新
    - 各要素に1回のFMA操作（2 FLOP）を実行
-   - 合計：$2 \times n_R \times m_R$ FLOP
+   - 合計：$`2 \times n_R \times m_R`$ FLOP
 
 ロード隠蔽条件は「演算時間 ≥ ロード時間」より：
 
-$$\frac{2 \times n_R \times m_R}{R_{\text{comp}}} \geq \frac{n_R + m_R}{R_{\text{load}}}$$
+```math
+\frac{2 \times n_R \times m_R}{R_{\text{comp}}} \geq \frac{n_R + m_R}{R_{\text{load}}}
+```
 
 特に正方行列ブロック（$n_R = m_R$）の場合、これは以下のように単純化されます：
 
-$$ n_R \geq \frac{R_{\text{comp}}}{R_{\text{load}}} \tag{★} $$
+```math
+n_R \geq \frac{R_{\text{comp}}}{R_{\text{load}}} \tag{★}
+```
 
 ここで：
-* $R_{\text{comp}}$ = 1コアあたりの倍精度浮動小数点演算性能（FLOP/cycle）
-* $R_{\text{load}}$ = L2→レジスタへのロード帯域（double/cycle）
+* $`R_{\text{comp}}`$ = 1コアあたりの倍精度浮動小数点演算性能（FLOP/cycle）
+* $`R_{\text{load}}`$ = L2→レジスタへのロード帯域（double/cycle）
 
 ### Ryzen 3970X (Zen 2)プロセッサでの適用
 
 Zen 2プロセッサの仕様：
-* **計算性能**: 1クロックあたり16 FLOP（2基の256-bit FMA/clock）→ $R_{\text{comp}} = 16 \text{ FLOP/cycle}$
-* **メモリ帯域**: L2→L1で32 バイト/clock = 4 double/clock → $R_{\text{load}} = 4 \text{ double/cycle}$
+* **計算性能**: 1クロックあたり16 FLOP（2基の256-bit FMA/clock）→ $`R_{\text{comp}} = 16 \text{ FLOP/cycle}`$
+* **メモリ帯域**: L2→L1で32 バイト/clock = 4 double/clock → $`R_{\text{load}} = 4 \text{ double/cycle}`$
 
 これを上記の式に代入すると：
 
