@@ -4,7 +4,9 @@
 
 ## 1. 概要
 最内ループ（マイクロカーネル）では $`C = A\,B`$そして、大きさは$`C\in\mathbb{R}^{m_R\times n_R},\quad A\in\mathbb{R}^{m_R\times k_R},\quad B\in\mathbb{R}^{k_R\times n_R}`$です。 
-
+```math
+C_{m_R\times n_R}\;+\!=\;A_{m_R\times1}\;B_{1\times n_R}
+```
 という **rank-1 update** を $`k`$ 回繰り返して行列 $`C`$ を計算します。性能を左右する要因は主に **(i) レジスタ数** と **(ii) 演算とロードの並行処理** のバランスです。
 
 ## 2. レジスタ制約
