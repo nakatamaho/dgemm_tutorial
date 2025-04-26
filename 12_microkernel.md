@@ -8,7 +8,6 @@
 そして、
 行列 $`A`$ の列ベクトル
 ```math
-a_k = A_{:,k} =
 \begin{bmatrix}
   a_{1k} \\
   a_{2k} \\
@@ -19,7 +18,7 @@ a_k = A_{:,k} =
 行列 $`B`$ の行ベクトル 
 
 ```math
-b_k^{\mathsf T} = B_{k,:}=\begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} 
+\begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} 
 ```
 と表して、
 ```math
