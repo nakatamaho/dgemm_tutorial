@@ -37,39 +37,40 @@ def get_cpu_info():
                 pass
     return cpu_info
 
-def read_and_plot_csv(csv_file="dgemm_benchmark_results.csv"):
+def read_and_plot_csv(csv_file="dgemm_naive_benchmark_results.csv"):
     """CSVファイルを読み込み、1–1000までの単一グラフを描画する関数"""
     if not os.path.exists(csv_file):
         print(f"Error: {csv_file} not found.")
         return
-
+    
     # データ読み込み・平均値計算
     df = pd.read_csv(csv_file)
     gflops_cols = [c for c in df.columns if "GFLOPS" in c]
     df["mean_gflops"] = df[gflops_cols].mean(axis=1)
     df["std_gflops"]  = df[gflops_cols].std(axis=1)
-
+    
     # CPU情報
     cpu_info = get_cpu_info()
-
+    
     # コンソール出力
     print(f"CPU: {cpu_info}")
     print(f"Matrix size range: {df['m'].min()} to {df['m'].max()}")
     print(f"Average performance: {df['mean_gflops'].mean():.4f} GFLOPS")
     print(f"Peak performance: {df['mean_gflops'].max():.4f} GFLOPS (at size {df.loc[df['mean_gflops'].idxmax(), 'm']})")
-
+    
     # グラフ描画
     plt.figure(figsize=(12, 8))
     plt.plot(df["m"], df["mean_gflops"],
              "o-", markersize=4, linewidth=1.5,
              label="Mean Performance", zorder=2)
-
+    
     # キャッシュ境界（L1/L2, L2/L3, L3/Memory）を示す縦線とラベル
     boundaries = [
         (45, 'L1'),
         (1024, 'L2'),
         (2896, 'L3'),
     ]
+    
     ymin, ymax = plt.ylim()
     for x, label in boundaries:
         plt.axvline(x=x, color="black", linestyle="--", linewidth=1, zorder=1)
@@ -84,12 +85,12 @@ def read_and_plot_csv(csv_file="dgemm_benchmark_results.csv"):
             fontweight="bold", 
             zorder=3
         )
-
+    
     plt.grid(True, linestyle="--", alpha=0.7, zorder=0)
     plt.title(f"Naive DGEMM Performance on {cpu_info}", fontsize=16)
     plt.xlabel("Matrix Size (N×N)", fontsize=14)
     plt.ylabel("Performance (GFLOPS)", fontsize=14)
-
+    
     # ピーク性能のハイライト
     peak_idx   = df["mean_gflops"].idxmax()
     peak_size  = df.loc[peak_idx, "m"]
@@ -99,11 +100,12 @@ def read_and_plot_csv(csv_file="dgemm_benchmark_results.csv"):
         color="red", s=100, zorder=4,
         label=f"Peak: {peak_gflops:.4f} GFLOPS at size {peak_size}"
     )
-
+    
     plt.legend(loc="best", fontsize=12)
-    output_file = "dgemm_benchmark_simple_plot.png"
+    output_file = "dgemm_naive_benchmark_plot.png"
     plt.savefig(output_file, dpi=300)
     print(f"Performance visualization saved to {output_file}")
+    
     return df
 
 if __name__ == "__main__":

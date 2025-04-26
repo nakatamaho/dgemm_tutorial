@@ -88,7 +88,7 @@ double benchmark(Func func) {
 
 int main() {
     // 結果をCSVファイルに出力するための準備
-    std::ofstream csv_file("dgemm_benchmark_results.csv");
+    std::ofstream csv_file("dgemm_naive_benchmark_results.csv");
     
     if (!csv_file.is_open()) {
         std::cerr << "Error: Could not open output file." << std::endl;
@@ -162,7 +162,7 @@ int main() {
     }
 
     csv_file.close();
-    std::cout << "Benchmark complete. Results saved to dgemm_benchmark_results.csv" << std::endl;
+    std::cout << "Benchmark complete. Results saved to dgemm_naive_benchmark_results.csv" << std::endl;
 
     return 0;
 }
