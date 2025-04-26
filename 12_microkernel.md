@@ -25,7 +25,7 @@
 C = \sum_{k=1}^{K} \; \begin{bmatrix} a_{1k}\\ a_{2k}\\ \vdots\\ a_{m_R\,k} \end{bmatrix} \! \begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} 
 ```
 
-という **rank-1 update** を $`k`$ 回繰り返して行列 $`C`$ を計算します。性能を左右する要因は主に **(i) レジスタ数** と **(ii) 演算とロードの並行処理** のバランスです
+という **rank-1 update** を $`k`$ 回繰り返して行列 $`C`$ を計算します。
 
 4x4の場合を考えてみましょう。
 rank-1アップデートでは、以下のように計算します。
