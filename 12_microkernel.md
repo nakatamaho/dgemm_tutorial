@@ -213,40 +213,6 @@ Zen 2プロセッサでDGEMMを最適化する場合：
 | 6 × 8                | 12 YMM (75%)  | ◎          | BLISライブラリが採用。プリフェッチ用のレジスタ残量はぎりぎりです |
 | 8 × 8                | 16 YMM (100%) | ○          | レジスタ使用率が最大。ロード先行命令の工夫が必要です |
 
-## 5. 教育用 4 × 4 AVX2 カーネル（抜粋）
-
-```cpp
-#include <immintrin.h>
-
-inline void micro_kernel_4x4(
-    const double* A, const double* B, double* C,
-    std::size_t ldc, std::size_t k)
-{
-    __m256d c0 = _mm256_loadu_pd(C + 0*ldc);
-    __m256d c1 = _mm256_loadu_pd(C + 1*ldc);
-    __m256d c2 = _mm256_loadu_pd(C + 2*ldc);
-    __m256d c3 = _mm256_loadu_pd(C + 3*ldc);
-
-    for (std::size_t p = 0; p < k; ++p) {
-        __m256d a   = _mm256_loadu_pd(A + 4*p);
-        __m256d bp0 = _mm256_broadcast_sd(B + p*4 + 0);
-        __m256d bp1 = _mm256_broadcast_sd(B + p*4 + 1);
-        __m256d bp2 = _mm256_broadcast_sd(B + p*4 + 2);
-        __m256d bp3 = _mm256_broadcast_sd(B + p*4 + 3);
-
-        c0 = _mm256_fmadd_pd(a, bp0, c0);
-        c1 = _mm256_fmadd_pd(a, bp1, c1);
-        c2 = _mm256_fmadd_pd(a, bp2, c2);
-        c3 = _mm256_fmadd_pd(a, bp3, c3);
-    }
-
-    _mm256_storeu_pd(C + 0*ldc, c0);
-    _mm256_storeu_pd(C + 1*ldc, c1);
-    _mm256_storeu_pd(C + 2*ldc, c2);
-    _mm256_storeu_pd(C + 3*ldc, c3);
-}
-```
-
 ## 6. まとめ
 * **レジスタ半分ルール** と **(★) ロード隠蔽条件** がマイクロカーネルサイズ選定の基本指針です。
 * Zen 2 アーキテクチャでは **$`n_r\ge2`$** を満たすことで帯域律速を回避できます。
