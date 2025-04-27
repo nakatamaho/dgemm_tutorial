@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <fstream>
 #include <string>
+#include <set>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -241,29 +242,25 @@ int main(int argc, char *argv[]) {
     // Output CSV header
     csv_file << "m,n,k,GFLOPS1,GFLOPS2,GFLOPS3,GFLOPS4,GFLOPS5,Verified" << std::endl;
     
-    std::vector<int> sizes;
+    std::set<int> size_set;
 
     // Sizes that are multiples of 4 (4 to 124)
     for (int size = 4; size <= 124; size += 4) {
-       sizes.push_back(size);
+        size_set.insert(size);
     }
 
     // Sizes that are multiples of 8 (128 to 1024)
     for (int size = 128; size <= 1024; size += 8) {
-        sizes.push_back(size);
-    }
- 
-    // Sizes that are multiples of 128 (1280 and up)
-    for (int size = 1280; size <= 3500; size += 128) {
-        sizes.push_back(size);
+        size_set.insert(size);
     }
 
-    for (int size = 1325; size <= 3500; size += 53) {
-    // Avoid duplicates with multiples of 128
-        if (size % 128 != 0) {
-            sizes.push_back(size);
-        }
+    // Sizes that are multiples of 128 (1280 and up)
+    for (int size = 1280; size <= 3500; size += 128) {
+        size_set.insert(size);
     }
+
+    // Convert set to vector (set is already sorted)
+    std::vector<int> sizes(size_set.begin(), size_set.end());
 
     const int num_trials = 5;  // 5 trials
     std::mt19937 mt(std::random_device{}());
