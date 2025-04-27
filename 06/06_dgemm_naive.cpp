@@ -11,7 +11,7 @@
 #endif
 
 // 最も単純なDGEMM実装(NN版のみ)
-void dgemm_simple_nn(int m, int n, int k, double alpha, const double *A, int lda,
+void dgemm_naive_nn(int m, int n, int k, double alpha, const double *A, int lda,
                      const double *B, int ldb, double beta, double *C, int ldc) {
     // 簡単なケースの処理
     if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
@@ -149,7 +149,7 @@ int main() {
         for (int trial = 0; trial < num_trials; ++trial) {
             std::vector<double> C_test = C;
             double elapsed = benchmark([&]() {
-                dgemm_simple_nn(m, n, k, alpha, A.data(), m, B.data(), k, beta, C_test.data(), m);
+                dgemm_naive_nn(m, n, k, alpha, A.data(), m, B.data(), k, beta, C_test.data(), m);
             });
             double flops = flop_count / elapsed / 1.0e9; // GFLOPS
             
