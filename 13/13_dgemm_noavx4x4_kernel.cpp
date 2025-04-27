@@ -83,11 +83,7 @@ void dgemm_noavx4x4_kernel_nn(int m, int n, int k, double alpha, const double *A
     
     // 一時バッファの確保
     std::vector<double> C_temp(4 * 4);
-    // A, B用の一時バッファを追加
-    std::vector<double> Ablock(4 * k);  // 4行 x k列
-    std::vector<double> Bblock(k * 4);  // k行 x 4列
-    
-    // ブロックごとに処理（4x4ブロック単位）
+// ブロックごとに処理（4x4ブロック単位）
     for (int j = 0; j < n; j += 4) {
         for (int i = 0; i < m; i += 4) {
             // 一時バッファをゼロ初期化
@@ -95,39 +91,25 @@ void dgemm_noavx4x4_kernel_nn(int m, int n, int k, double alpha, const double *A
                 C_temp[idx] = 0.0;
             }
             
-            // Aをコピー - 4行 x k列のブロック
-            for (int l = 0; l < k; l++) {
-                for (int ii = 0; ii < 4; ii++) {
-                    Ablock[ii + l * 4] = A[(i + ii) + l * lda];
-                }
-            }
+            // マイクロカーネルを直接呼び出し - コピーなし
+            noavx_micro_kernel_4x4(k, &A[i], lda, &B[j * ldb], ldb, C_temp.data(), 4);
             
-            // Bをコピーして同時にα倍 - k行 x 4列のブロック
-            for (int jj = 0; jj < 4; jj++) {
-                for (int l = 0; l < k; l++) {
-                    Bblock[l + jj * k] = alpha * B[l + (j + jj) * ldb];
-                }
-            }
-            
-            // マイクロカーネルを呼び出し - Ablock, Bblockを使用
-            noavx_micro_kernel_4x4(k, Ablock.data(), 4, Bblock.data(), k, C_temp.data(), 4);
-            
-            // 結果をCに加算 (すでにBblockはalpha倍されているので、ここではalpha倍しない)
-            // betaも同時に適用する 
+            // 結果をCに加算 (alpha倍とbeta倍を同時に適用)
             for (int jj = 0; jj < 4; jj++) {
                 for (int ii = 0; ii < 4; ii++) {
                     if (beta == 0.0) {
-                        // beta = 0の場合は単に結果を代入
-                        C[(i + ii) + (j + jj) * ldc] = C_temp[ii + jj * 4];
+                        // beta = 0の場合
+                        C[(i + ii) + (j + jj) * ldc] = alpha * C_temp[ii + jj * 4];
                     } else {
-                        // FMA可能な形式: C = beta * C + C_temp
-                        C[(i + ii) + (j + jj) * ldc] = beta * C[(i + ii) + (j + jj) * ldc] + C_temp[ii + jj * 4];
+                        // FMA可能な形式: C = beta * C + alpha * C_temp
+                        C[(i + ii) + (j + jj) * ldc] = beta * C[(i + ii) + (j + jj) * ldc] + alpha * C_temp[ii + jj * 4];
                     }
                 }
             }
         }
     }
 }
+
 
 // ランダム行列の生成
 void generate_random_matrix(int rows, int cols, double *matrix) {
