@@ -110,6 +110,62 @@ void dgemm_noavx4x4_kernel_nn(int m, int n, int k, double alpha, const double *A
     }
 }
 
+// Naive DGEMM implementation for verification
+void dgemm_naive(int m, int n, int k, double alpha, const double *A, int lda,
+                 const double *B, int ldb, double beta, double *C, int ldc) {
+    // beta * C
+    if (beta != 1.0) {
+        for (int j = 0; j < n; j++) {
+            for (int i = 0; i < m; i++) {
+                C[i + j * ldc] = beta * C[i + j * ldc];
+            }
+        }
+    }
+    
+    // alpha * A * B + C
+    for (int j = 0; j < n; j++) {
+        for (int i = 0; i < m; i++) {
+            double sum = 0.0;
+            for (int l = 0; l < k; l++) {
+                sum += A[i + l * lda] * B[l + j * ldb];
+            }
+            C[i + j * ldc] += alpha * sum;
+        }
+    }
+}
+
+// Verify results by comparing with naive implementation
+bool verify_results(int m, int n, int k, double alpha, const double *A, int lda,
+                   const double *B, int ldb, double beta, double *C, int ldc) {
+    // Create copies of C for both implementations
+    std::vector<double> C_naive(m * n);
+    std::vector<double> C_opt(m * n);
+    std::copy(C, C + m * n, C_naive.data());
+    std::copy(C, C + m * n, C_opt.data());
+    
+    // Run both implementations
+    dgemm_naive(m, n, k, alpha, A, lda, B, ldb, beta, C_naive.data(), ldc);
+    dgemm_noavx4x4_kernel_nn(m, n, k, alpha, A, lda, B, ldb, beta, C_opt.data(), ldc);
+    
+    // Compare results
+    const double epsilon = 1e-10;  // Tolerance for floating-point comparison
+    bool match = true;
+    
+    for (int j = 0; j < n; j++) {
+        for (int i = 0; i < m; i++) {
+            double diff = std::abs(C_naive[i + j * ldc] - C_opt[i + j * ldc]);
+            if (diff > epsilon) {
+                std::cout << "Mismatch at (" << i << ", " << j << "): " 
+                          << C_naive[i + j * ldc] << " vs " << C_opt[i + j * ldc] 
+                          << " (diff: " << diff << ")" << std::endl;
+                match = false;
+                // Continue checking but remember that we found a mismatch
+            }
+        }
+    }
+    
+    return match;
+}
 
 // ランダム行列の生成
 void generate_random_matrix(int rows, int cols, double *matrix) {
@@ -151,7 +207,7 @@ int main() {
 #endif
 
     // CSV形式のヘッダーを出力
-    csv_file << "m,n,k,GFLOPS1,GFLOPS2,GFLOPS3,GFLOPS4,GFLOPS5" << std::endl;
+    csv_file << "m,n,k,GFLOPS1,GFLOPS2,GFLOPS3,GFLOPS4,GFLOPS5,Verified" << std::endl;
     
     std::vector<int> sizes;
 
@@ -190,6 +246,13 @@ int main() {
         generate_random_matrix(k, n, B.data());
         generate_random_matrix(m, n, C.data());
 
+        // 正確性の検証
+        bool verified = verify_results(m, n, k, alpha, A.data(), m, B.data(), k, beta, C.data(), m);
+        if (!verified) {
+            std::cout << " FAILED" << std::endl;
+            exit(-1);
+        }
+
         // CSV行の開始: m,n,k
         csv_file << m << "," << n << "," << k;
 
@@ -204,6 +267,9 @@ int main() {
             // GFLOPSの値をCSV形式で追加
             csv_file << "," << flops;
         }
+        
+        // 検証結果を追加
+        csv_file << "," << (verified ? "True" : "False");
         
         // 行の終了
         csv_file << std::endl;
