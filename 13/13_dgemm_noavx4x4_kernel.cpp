@@ -81,41 +81,48 @@ void dgemm_noavx4x4_kernel_nn(int m, int n, int k, double alpha, const double *A
         return;
     }
     
-    // 4x4ブロックずつ処理する
-    int mb = m / 4;  // 4の倍数前提
-    int nb = n / 4;  // 4の倍数前提
-    
     // 一時バッファの確保
     std::vector<double> C_temp(4 * 4);
+    // A, B用の一時バッファを追加
+    std::vector<double> Ablock(4 * k);  // 4行 x k列
+    std::vector<double> Bblock(k * 4);  // k行 x 4列
     
-    // betaによるCの初期化
-    if (beta != 1.0) {
-        for (int j = 0; j < n; j++) {
-            for (int i = 0; i < m; i++) {
-                if (beta == 0.0) {
-                    C[i + j * ldc] = 0.0;
-                } else {
-                    C[i + j * ldc] = beta * C[i + j * ldc];
+    // ブロックごとに処理（4x4ブロック単位）
+    for (int j = 0; j < n; j += 4) {
+        for (int i = 0; i < m; i += 4) {
+            // 一時バッファをゼロ初期化
+            for (int idx = 0; idx < 16; idx++) {
+                C_temp[idx] = 0.0;
+            }
+            
+            // Aをコピー - 4行 x k列のブロック
+            for (int l = 0; l < k; l++) {
+                for (int ii = 0; ii < 4; ii++) {
+                    Ablock[ii + l * 4] = A[(i + ii) + l * lda];
                 }
             }
-        }
-    }
-    
-    // ブロックごとに処理
-    for (int jb = 0; jb < nb; jb++) {
-        for (int ib = 0; ib < mb; ib++) {
-            // 一時バッファをゼロ初期化
-            for (int i = 0; i < 16; i++) {
-                C_temp[i] = 0.0;
+            
+            // Bをコピーして同時にα倍 - k行 x 4列のブロック
+            for (int jj = 0; jj < 4; jj++) {
+                for (int l = 0; l < k; l++) {
+                    Bblock[l + jj * k] = alpha * B[l + (j + jj) * ldb];
+                }
             }
             
-            // マイクロカーネルを呼び出し
-            noavx_micro_kernel_4x4(k, &A[ib * 4], lda, &B[jb * 4 * ldb], ldb, C_temp.data(), 4);
+            // マイクロカーネルを呼び出し - Ablock, Bblockを使用
+            noavx_micro_kernel_4x4(k, Ablock.data(), 4, Bblock.data(), k, C_temp.data(), 4);
             
-            // 結果を適切にスケーリングしてCに加算
-            for (int j = 0; j < 4; j++) {
-                for (int i = 0; i < 4; i++) {
-                    C[(ib * 4 + i) + (jb * 4 + j) * ldc] += alpha * C_temp[i + j * 4];
+            // 結果をCに加算 (すでにBblockはalpha倍されているので、ここではalpha倍しない)
+            // betaも同時に適用する 
+            for (int jj = 0; jj < 4; jj++) {
+                for (int ii = 0; ii < 4; ii++) {
+                    if (beta == 0.0) {
+                        // beta = 0の場合は単に結果を代入
+                        C[(i + ii) + (j + jj) * ldc] = C_temp[ii + jj * 4];
+                    } else {
+                        // FMA可能な形式: C = beta * C + C_temp
+                        C[(i + ii) + (j + jj) * ldc] = beta * C[(i + ii) + (j + jj) * ldc] + C_temp[ii + jj * 4];
+                    }
                 }
             }
         }
