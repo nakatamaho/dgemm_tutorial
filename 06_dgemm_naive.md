@@ -60,12 +60,13 @@ $$C(i,j) = \beta \times C(i,j) + \alpha \times \sum_{l=0}^{k-1} \left( A(i,l) \t
 #include <random>
 #include <vector>
 #include <algorithm>
+#include <fstream>
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
-// 最も単純なDGEMM実装（NN版のみ）
+// 最も単純なDGEMM実装(NN版のみ)
 void dgemm_simple_nn(int m, int n, int k, double alpha, const double *A, int lda,
                      const double *B, int ldb, double beta, double *C, int ldc) {
     // 簡単なケースの処理
@@ -141,86 +142,83 @@ double benchmark(Func func) {
     return elapsed.count();
 }
 
-// 平均と分散の計算
-std::pair<double, double> calculate_mean_and_variance(const std::vector<double> &values) {
-    double mean = 0.0;
-    double variance = 0.0;
-
-    for (double value : values) {
-        mean += value;
-    }
-    mean /= values.size();
-
-    for (double value : values) {
-        double diff = (value - mean);
-        variance += diff * diff;
-    }
-    variance /= values.size();
-
-    return {mean, variance};
-}
-
 int main() {
+    // 結果をCSVファイルに出力するための準備
+    std::ofstream csv_file("dgemm_naive_benchmark_results.csv");
+    
+    if (!csv_file.is_open()) {
+        std::cerr << "Error: Could not open output file." << std::endl;
+        return 1;
+    }
+
 #ifdef _OPENMP
     std::cout << "OpenMP is enabled.\n";
     std::cout << "Number of threads (max): " << omp_get_max_threads() << "\n";
 #else
     std::cout << "OpenMP is not enabled.\n";
 #endif
-    // 1から1000まで7ずつのサイズを生成（正方行列用）
+
+    // CSV形式のヘッダーを出力
+    csv_file << "m,n,k,GFLOPS1,GFLOPS2,GFLOPS3,GFLOPS4,GFLOPS5" << std::endl;
+    
     std::vector<int> sizes;
-    for (int size = 1; size <= 1000; size += 7) {
+
+    // 1～128まではすべて含める
+    for (int size = 1; size <= 128; ++size) {
         sizes.push_back(size);
     }
-    
-    const int num_trials = 5;
+
+    // 129以降は元のステップ幅7を維持（128 + 7 = 135 から開始）
+    for (int size = 135; size <= 3500; size += 7) {
+        sizes.push_back(size);
+    }
+
+    const int num_trials = 5;  // 5回の試行
     std::mt19937 mt(std::random_device{}());
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
 
     for (auto size : sizes) {
+        // 進捗表示
+        std::cout << "Benchmarking size " << size << "..." << std::endl;
+        
         // m = n = k = size の正方行列
         int m = size;
         int n = size;
         int k = size;
-                double flop_count = static_cast<double>(m) * n * (2.0 * k + 1);
+        double flop_count = static_cast<double>(m) * n * (2.0 * k + 1);
 
-                std::vector<double> A(m * k);
-                std::vector<double> B(k * n);
-                std::vector<double> C(m * n);
+        std::vector<double> A(m * k);
+        std::vector<double> B(k * n);
+        std::vector<double> C(m * n);
 
-                double alpha = dist(mt);
-                double beta = dist(mt);
+        double alpha = dist(mt);
+        double beta = dist(mt);
 
-                generate_random_matrix(m, k, A.data());
-                generate_random_matrix(k, n, B.data());
-                generate_random_matrix(m, n, C.data());
+        generate_random_matrix(m, k, A.data());
+        generate_random_matrix(k, n, B.data());
+        generate_random_matrix(m, n, C.data());
 
-                std::cout << "Benchmarking m=" << m << ", n=" << n << ", k=" << k << ":\n";
+        // CSV行の開始: m,n,k
+        csv_file << m << "," << n << "," << k;
 
-                // シンプル実装のベンチマーク
-                std::vector<double> simple_flops_results;
-                for (int trial = 0; trial < num_trials; ++trial) {
-                    std::vector<double> C_test = C;
-                    double elapsed = benchmark([&]() {
-                        dgemm_simple_nn(m, n, k, alpha, A.data(), m, B.data(), k, beta, C_test.data(), m);
-                    });
-                    double flops = flop_count / elapsed / 1.0e9; // GFLOPS
-                    simple_flops_results.push_back(flops);
-                }
-
-                auto [mean_simple_flops, var_simple_flops] = calculate_mean_and_variance(simple_flops_results);
-
-                std::cout << "Simple Implementation:\n";
-                std::cout << "  FLOPS for each trial [GFLOPS]: ";
-                for (const auto &val : simple_flops_results) {
-                    std::cout << val << " ";
-                }
-                std::cout << "\n";
-                std::cout << "  Mean FLOPS: " << mean_simple_flops << " GFLOPS, Variance: " << var_simple_flops << "\n";
-                std::cout << "------------------------------------------------\n";
-            }
+        // シンプル実装のベンチマーク
+        for (int trial = 0; trial < num_trials; ++trial) {
+            std::vector<double> C_test = C;
+            double elapsed = benchmark([&]() {
+                dgemm_simple_nn(m, n, k, alpha, A.data(), m, B.data(), k, beta, C_test.data(), m);
+            });
+            double flops = flop_count / elapsed / 1.0e9; // GFLOPS
+            
+            // GFLOPSの値をCSV形式で追加
+            csv_file << "," << flops;
         }
-    
+        
+        // 行の終了
+        csv_file << std::endl;
+    }
+
+    csv_file.close();
+    std::cout << "Benchmark complete. Results saved to dgemm_naive_benchmark_results.csv" << std::endl;
 
     return 0;
 }
@@ -256,7 +254,7 @@ Benchmarking size 3474...
 Benchmarking size 3481...
 Benchmarking size 3488...
 Benchmarking size 3495...
-Benchmark complete. Results saved to dgemm_benchmark_results.csv
+Benchmark complete. Results saved to dgemm_naive_benchmark_results.csv
 ```
 dgemm_benchmark_results.csvというファイルができますので、プロットします。
 ```bash
@@ -266,7 +264,7 @@ python3 plot.py
 
 ## 結果
 
-![DGEMM ベンチマークプロット](06/dgemm_benchmark_simple_plot.png)
+![DGEMM ベンチマークプロット](06/dgemm_naive_benchmark_results.png)
     
 ## 結果の分析
 
