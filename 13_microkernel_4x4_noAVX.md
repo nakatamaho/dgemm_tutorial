@@ -55,6 +55,24 @@ void noavx_micro_kernel_4x4(int k, const double *A, int lda,
 1. **4の倍数のサイズの行列しか扱えない**: 端数処理はこの先でやります。
 2. **L3キャッシュは生かせない実装**: A, Bの幅$`k`$が大きくなると、行列A, BはL2のキャッシュの外に出ます。すると、このrank1 アップデートの目論見ははずれ、パフォーマンスが落ちるはずです。次の章でその対策をします。
 
+### 行列の定数倍の扱い
+
+α倍、β倍は以下のように行うと効率が良いです。
+```cpp
+            // 結果をCに加算 (alpha倍とbeta倍を同時に適用)
+            for (int jj = 0; jj < 4; jj++) {
+                for (int ii = 0; ii < 4; ii++) {
+                    if (beta == 0.0) {
+                        // beta = 0の場合
+                        C[(i + ii) + (j + jj) * ldc] = alpha * C_temp[ii + jj * 4];
+                    } else {
+                        // FMA可能な形式: C = beta * C + alpha * C_temp
+                        C[(i + ii) + (j + jj) * ldc] = beta * C[(i + ii) + (j + jj) * ldc] + alpha * C_temp[ii + jj * 4];
+                    }
+                }
+            }
+```
+
 
 ## 結果
 
