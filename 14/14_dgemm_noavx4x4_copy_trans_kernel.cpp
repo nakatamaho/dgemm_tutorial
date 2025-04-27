@@ -11,6 +11,13 @@
 #include <omp.h>
 #endif
 
+#define KMAX 4096
+
+// 一時バッファの確保
+std::vector<double> C_temp(4 * 4);
+std::vector<double> Ablock(KMAX * 4);  // 転置するので k×4 に変更
+std::vector<double> Bblock(KMAX * 4);
+
 // 4x4 マイクロカーネル (AVX2なし) - 転置Aバージョン
 void noavx_micro_kernel_4x4(int k, const double *A, int lda,
                            const double *B, int ldb, double *C, int ldc) {
@@ -81,11 +88,6 @@ void dgemm_noavx4x4_kernel_nn(int m, int n, int k, double alpha, const double *A
         }
         return;
     }
-    
-    // 一時バッファの確保
-    std::vector<double> C_temp(4 * 4);
-    std::vector<double> Ablock(k * 4);  // 転置するので k×4 に変更
-    std::vector<double> Bblock(k * 4);
     
     // ブロックごとに処理（4x4ブロック単位）
     for (int j = 0; j < n; j += 4) {
@@ -220,7 +222,7 @@ int main(int argc, char *argv[]) {
     }
 
     // 結果をCSVファイルに出力するための準備
-    std::ofstream csv_file("dgemm_benchmark_noavx4x4kernel_results.csv");
+    std::ofstream csv_file("dgemm_benchmark_noavx4x4kernel_trans_results.csv");
     
     if (!csv_file.is_open()) {
         std::cerr << "Error: Could not open output file." << std::endl;

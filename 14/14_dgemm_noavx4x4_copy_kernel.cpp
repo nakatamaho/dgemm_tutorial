@@ -11,6 +11,15 @@
 #include <omp.h>
 #endif
 
+
+#define KMAX 4096
+
+// 一時バッファの確保
+std::vector<double> C_temp(4 * 4);
+std::vector<double> Ablock(4 * KMAX);
+std::vector<double> Bblock(KMAX * 4);
+
+
 // 4x4 マイクロカーネル (AVX2なし)
 void noavx_micro_kernel_4x4(int k, const double *A, int lda,
                            const double *B, int ldb, double *C, int ldc) {
@@ -81,11 +90,6 @@ void dgemm_noavx4x4_kernel_nn(int m, int n, int k, double alpha, const double *A
         }
         return;
     }
-    
-    // 一時バッファの確保
-    std::vector<double> C_temp(4 * 4);
-    std::vector<double> Ablock(4 * k);
-    std::vector<double> Bblock(k * 4);
     
     // ブロックごとに処理（4x4ブロック単位）
     for (int j = 0; j < n; j += 4) {
