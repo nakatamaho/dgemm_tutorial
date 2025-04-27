@@ -34,47 +34,17 @@ void noavx_micro_kernel_4x4(int k, const double *A, int lda,
         double b3 = B[l + 3 * ldb];
         
         // 行列積の計算
-        c00 += a0 * b0;
-        c01 += a0 * b1;
-        c02 += a0 * b2;
-        c03 += a0 * b3;
-        
-        c10 += a1 * b0;
-        c11 += a1 * b1;
-        c12 += a1 * b2;
-        c13 += a1 * b3;
-        
-        c20 += a2 * b0;
-        c21 += a2 * b1;
-        c22 += a2 * b2;
-        c23 += a2 * b3;
-        
-        c30 += a3 * b0;
-        c31 += a3 * b1;
-        c32 += a3 * b2;
-        c33 += a3 * b3;
+        c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
+        c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
+        c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
+        c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
     }
     
     // 結果をCに格納
-    C[0 + 0 * ldc] = c00;
-    C[0 + 1 * ldc] = c01;
-    C[0 + 2 * ldc] = c02;
-    C[0 + 3 * ldc] = c03;
-    
-    C[1 + 0 * ldc] = c10;
-    C[1 + 1 * ldc] = c11;
-    C[1 + 2 * ldc] = c12;
-    C[1 + 3 * ldc] = c13;
-    
-    C[2 + 0 * ldc] = c20;
-    C[2 + 1 * ldc] = c21;
-    C[2 + 2 * ldc] = c22;
-    C[2 + 3 * ldc] = c23;
-    
-    C[3 + 0 * ldc] = c30;
-    C[3 + 1 * ldc] = c31;
-    C[3 + 2 * ldc] = c32;
-    C[3 + 3 * ldc] = c33;
+    C[0 + 0 * ldc] = c00; C[0 + 1 * ldc] = c01; C[0 + 2 * ldc] = c02; C[0 + 3 * ldc] = c03;
+    C[1 + 0 * ldc] = c10; C[1 + 1 * ldc] = c11; C[1 + 2 * ldc] = c12; C[1 + 3 * ldc] = c13;
+    C[2 + 0 * ldc] = c20; C[2 + 1 * ldc] = c21; C[2 + 2 * ldc] = c22; C[2 + 3 * ldc] = c23;
+    C[3 + 0 * ldc] = c30; C[3 + 1 * ldc] = c31; C[3 + 2 * ldc] = c32; C[3 + 3 * ldc] = c33;
 }
 
 // 4x4マイクロカーネルを使用したDGEMM実装(NN版) - 4の倍数サイズのみ対応
