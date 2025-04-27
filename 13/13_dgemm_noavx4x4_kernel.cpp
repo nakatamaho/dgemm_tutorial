@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <fstream>
+#include <string>
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -190,7 +191,16 @@ double benchmark(Func func) {
     return elapsed.count();
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+    // コマンドライン引数の解析
+    bool perform_checks = true;
+    for (int i = 1; i < argc; i++) {
+        std::string arg = argv[i];
+        if (arg == "--nocheck") {
+            perform_checks = false;
+        }
+    }
+
     // 結果をCSVファイルに出力するための準備
     std::ofstream csv_file("dgemm_benchmark_noavx4x4kernel_results.csv");
     
@@ -246,11 +256,14 @@ int main() {
         generate_random_matrix(k, n, B.data());
         generate_random_matrix(m, n, C.data());
 
-        // 正確性の検証
-        bool verified = verify_results(m, n, k, alpha, A.data(), m, B.data(), k, beta, C.data(), m);
-        if (!verified) {
-            std::cout << " FAILED" << std::endl;
-            exit(-1);
+        // 正確性の検証 (--nocheckが指定されていない場合のみ)
+        bool verified = true; // 検証をスキップする場合はtrueとする
+        if (perform_checks) {
+            verified = verify_results(m, n, k, alpha, A.data(), m, B.data(), k, beta, C.data(), m);
+            if (!verified) {
+                std::cout << " FAILED" << std::endl;
+		exit(-1);
+            }
         }
 
         // CSV行の開始: m,n,k
@@ -269,7 +282,9 @@ int main() {
         }
         
         // 検証結果を追加
-        csv_file << "," << (verified ? "True" : "False");
+        if (perform_checks) {
+            csv_file << "," << (verified ? "True" : "False");
+        }
         
         // 行の終了
         csv_file << std::endl;
