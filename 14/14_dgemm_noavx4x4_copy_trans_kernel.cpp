@@ -258,6 +258,13 @@ int main(int argc, char *argv[]) {
         sizes.push_back(size);
     }
 
+    for (int size = 1325; size <= 3500; size += 53) {
+    // Avoid duplicates with multiples of 128
+        if (size % 128 != 0) {
+            sizes.push_back(size);
+        }
+    }
+
     const int num_trials = 5;  // 5 trials
     std::mt19937 mt(std::random_device{}());
     std::uniform_real_distribution<double> dist(-1.0, 1.0);
