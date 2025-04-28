@@ -66,20 +66,11 @@ inline void avx2_micro_kernel_4x4_aligned(int k,
         __m256d b2 = _mm256_broadcast_sd(B + l + 2*ldb);  // B[l,2] broadcast
         __m256d b3 = _mm256_broadcast_sd(B + l + 3*ldb);  // B[l,3] broadcast
         
-        /* Update accumulators with FMA (Fused Multiply-Add) or standard multiply-add */
-#ifdef __FMA__
-      // Use FMA instructions if available: c += a * b
+        /* Update accumulators with FMA (Fused Multiply-Add) */
         c0 = _mm256_fmadd_pd(a, b0, c0);  // c0 += a * b0
         c1 = _mm256_fmadd_pd(a, b1, c1);  // c1 += a * b1
         c2 = _mm256_fmadd_pd(a, b2, c2);  // c2 += a * b2
         c3 = _mm256_fmadd_pd(a, b3, c3);  // c3 += a * b3
-#else
-      // Fallback for CPUs without FMA support: c += a * b
-        c0 = _mm256_add_pd(c0, _mm256_mul_pd(a, b0));  // c0 += a * b0
-        c1 = _mm256_add_pd(c1, _mm256_mul_pd(a, b1));  // c1 += a * b1
-        c2 = _mm256_add_pd(c2, _mm256_mul_pd(a, b2));  // c2 += a * b2
-        c3 = _mm256_add_pd(c3, _mm256_mul_pd(a, b3));  // c3 += a * b3
-#endif
     }
     
     /* Store results back to memory with aligned store instructions */
