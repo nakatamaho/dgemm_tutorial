@@ -172,7 +172,7 @@ def read_and_plot_csv(main_csv="dgemm_benchmark_noavx_block_kernel_results.csv",
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Plot DGEMM benchmark results')
-    parser.add_argument('--main', default='dgemm_benchmark_noavx4x4kernel_results.csv',
+    parser.add_argument('--main', default='dgemm_benchmark_noavx_block_kernel_results.csv',
                         help='Main CSV file to plot (automatically uses dgemm_benchmark_noavx4x4kernel_results.csv if not specified)')
     parser.add_argument('--comp', default=None,
                         help='Comparison CSV file to plot (e.g. dgemm_benchmark_results.csv for naive implementation)')
