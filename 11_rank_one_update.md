@@ -33,7 +33,25 @@ a_k = A_{:,k} =
 b_k^{\mathsf T} = B_{k,:}=\begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} 
 ```
 
-これらの外積 $`a_k\,b_k^{\mathsf T}`$ はランク 1 の行列になり、全体の積は以下のようにランク 1 行列の和として書き直せます。
+これらの外積 $`a_k\,b_k^{\mathsf T}`$ はランク 1 の行列になります。
+```math
+a_k b_k^T = 
+\begin{bmatrix}
+  a_{1k} \\
+  a_{2k} \\
+  \vdots \\
+  a_{m_R\,k}
+\end{bmatrix}
+\begin{bmatrix} b_{k1} & b_{k2} & \dots & b_{k\,n_R} \end{bmatrix} =
+\begin{bmatrix}
+  a_{1k}b_{k1} & a_{1k}b_{k2} & \dots & a_{1k}b_{k\,n_R} \\
+  a_{2k}b_{k1} & a_{2k}b_{k2} & \dots & a_{2k}b_{k\,n_R} \\
+  \vdots & \vdots & \ddots & \vdots \\
+  a_{m_R\,k}b_{k1} & a_{m_R\,k}b_{k2} & \dots & a_{m_R\,k}b_{k\,n_R}
+\end{bmatrix}
+```
+
+全体の積は以下のようにランク 1 行列の和として書き直せます。
 
 ```math
 $$
