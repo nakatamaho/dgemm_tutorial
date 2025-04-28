@@ -42,7 +42,6 @@ GEMMとは、general matrix multiplicationの略で、Dはdouble precision(binar
 | 9️⃣    | [CPU メモリ階層](09_memory_hierarchy.md) |
 | 1️⃣0️⃣    | [ブロッキングの数理](10_blocking.md) |
 | 1️⃣1️⃣   | [DGEMM最適化:ランク-1アップデート法](11_rank_one_update.md) |
-| 8️⃣     | OpenMP 並列化編                                 | `08_parallelization.md`                  |
-| 9️⃣     | 高度最適化：パラメータチューニング・プリフェッチ | `09_advanced_optim.md`                   |
-
-
+| 1️⃣2️⃣   | [マイクロカーネルの設計](12_microkernel.md) |
+| 1️⃣3️⃣ | [AVX2(SIMD)を使わない4x4マイクロカーネルによるDGEMM高速化](13_microkernel_4x4_noAVX.md) |
+| 1️⃣4️⃣  | [パネル化:L2キャッシュからL3キャッシュへの拡張への布石](14_panelization.md) |
