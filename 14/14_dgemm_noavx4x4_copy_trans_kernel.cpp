@@ -15,14 +15,24 @@
 // Define block sizes
 #define MR 4
 #define NR 4
-#define KMAX 4096
+#define MC 256
+#define NC 256
+#define KC 256
 
-// Allocate temporary buffers (C-style)
-double C_temp[MR * NR];
-double Ablock[KMAX * MR];  // Transposed, so k×MR
-double Bblock[KMAX * NR];
+#define CACHELINE 64
+#if defined(__GNUC__) || defined(__clang__)
+    #define ALIGN(x) __attribute__((aligned(x)))
+#elif defined(_MSC_VER)
+    #define ALIGN(x) __declspec(align(x))
+#else
+    #define ALIGN(x)
+#endif
 
-// Micro kernel (no AVX) - transposed A version
+ALIGN(CACHELINE) static double Apanel[KC * MC]; // Transposed, so k×MR
+ALIGN(CACHELINE) static double Bpanel[KC * NC];
+ALIGN(CACHELINE) static double C_temp[MC * NC];
+
+// 4x4 micro kernel (no AVX) - transposed A version
 void noavx_micro_kernel(int k, const double *A, int lda,
                          const double *B, int ldb, double *C, int ldc) {
     // Accumulate results in temporary variables
@@ -61,7 +71,7 @@ void noavx_micro_kernel(int k, const double *A, int lda,
 
 // DGEMM implementation with MR x NR micro kernel (NN version) - for multiples of MR/NR only, with buffer copying (A transposed version)
 void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, int lda,
-                           const double *B, int ldb, double beta, double *C, int ldc) {
+                            const double *B, int ldb, double beta, double *C, int ldc) {
     // Handle simple cases
     if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
         return;  // Nothing to do
@@ -93,7 +103,7 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
         return;
     }
     
-    // Process by blocks (MR x NR blocks)
+    // Process by panels (MR x NR panels)
     for (int j = 0; j < n; j += NR) {
         for (int i = 0; i < m; i += MR) {
             // Initialize temporary buffer to zero
@@ -101,22 +111,22 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
                 C_temp[idx] = 0.0;
             }
             
-            // Copy A while transposing - k rows x MR columns block (after transpose)
+            // Copy A while transposing - k rows x MR columns panel (after transpose)
             for (int ii = 0; ii < MR; ii++) {
                 for (int l = 0; l < k; l++) {
-                    Ablock[l + ii * k] = A[(i + ii) + l * lda];
+                    Apanel[l + ii * k] = A[(i + ii) + l * lda];
                 }
             }
             
-            // Copy B and multiply by alpha - k rows x NR columns block
+            // Copy B and multiply by alpha - k rows x NR columns panel
             for (int jj = 0; jj < NR; jj++) {
                 for (int l = 0; l < k; l++) {
-                    Bblock[l + jj * k] = alpha * B[l + (j + jj) * ldb];
+                    Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
                 }
             }
             
-            // Call micro kernel - using Ablock, Bblock
-            noavx_micro_kernel(k, Ablock, k, Bblock, k, C_temp, MR);
+            // Call micro kernel - using Apanel, Bpanel
+            noavx_micro_kernel(k, Apanel, k, Bpanel, k, C_temp, MR);
             
             // Add results to C (apply beta)
             for (int jj = 0; jj < NR; jj++) {
@@ -254,7 +264,7 @@ int main(int argc, char *argv[]) {
         size_set.insert(size);
     }
 
-   // Convert set to vector (set is already sorted)
+    // Convert set to vector (set is already sorted)
     std::vector<int> sizes(size_set.begin(), size_set.end());
 
     const int num_trials = 5;  // 5 trials

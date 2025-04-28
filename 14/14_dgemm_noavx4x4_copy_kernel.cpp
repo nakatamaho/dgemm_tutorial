@@ -15,12 +15,22 @@
 // Define block sizes
 #define MR 4
 #define NR 4
-#define KMAX 4096
+#define MC 256
+#define NC 256
+#define KC 256
 
-// Allocate temporary buffers (C-style)
-double C_temp[MR * NR];
-double Ablock[MR * KMAX];
-double Bblock[KMAX * NR];
+#define CACHELINE 64
+#if defined(__GNUC__) || defined(__clang__)
+    #define ALIGN(x) __attribute__((aligned(x)))
+#elif defined(_MSC_VER)
+    #define ALIGN(x) __declspec(align(x))
+#else
+    #define ALIGN(x)
+#endif
+
+ALIGN(CACHELINE) static double Apanel[MC * KC];
+ALIGN(CACHELINE) static double Bpanel[KC * NC];
+ALIGN(CACHELINE) static double C_temp[MC * NC];
 
 // 4x4 micro kernel (no AVX)
 void noavx_micro_kernel(int k, const double *A, int lda,
@@ -93,7 +103,7 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
         return;
     }
     
-    // Process by blocks (MR x NR blocks)
+    // Process by panels (MR x NR panels)
     for (int j = 0; j < n; j += NR) {
         for (int i = 0; i < m; i += MR) {
             // Initialize temporary buffer to zero
@@ -101,22 +111,22 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
                 C_temp[idx] = 0.0;
             }
             
-            // Copy A - MR rows x k columns block
+            // Copy A - MR rows x k columns panel
             for (int l = 0; l < k; l++) {
                 for (int ii = 0; ii < MR; ii++) {
-                    Ablock[ii + l * MR] = A[(i + ii) + l * lda];
+                    Apanel[ii + l * MR] = A[(i + ii) + l * lda];
                 }
             }
             
-            // Copy B and multiply by alpha - k rows x NR columns block
+            // Copy B and multiply by alpha - k rows x NR columns panel
             for (int jj = 0; jj < NR; jj++) {
                 for (int l = 0; l < k; l++) {
-                    Bblock[l + jj * k] = alpha * B[l + (j + jj) * ldb];
+                    Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
                 }
             }
             
-            // Call micro kernel - using Ablock, Bblock
-            noavx_micro_kernel(k, Ablock, MR, Bblock, k, C_temp, MR);
+            // Call micro kernel - using Apanel, Bpanel
+            noavx_micro_kernel(k, Apanel, MR, Bpanel, k, C_temp, MR);
             
             // Add results to C (apply beta)
             for (int jj = 0; jj < NR; jj++) {
@@ -250,12 +260,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Sizes that are multiples of 8 (128 to 1024)
-    for (int size = 128; size <= 1024; size += 8) {
-        size_set.insert(size);
-    }
-
-    // Sizes that are multiples of 128 (1280 and up)
-    for (int size = 1280; size <= 3500; size += 128) {
+    for (int size = 128; size <= 3500; size += 8) {
         size_set.insert(size);
     }
 
