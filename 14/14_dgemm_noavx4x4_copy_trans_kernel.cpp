@@ -28,11 +28,11 @@
     #define ALIGN(x)
 #endif
 
-ALIGN(CACHELINE) static double Apanel[KC * MC]; // Transposed, so KCxMC
+ALIGN(CACHELINE) static double Apanel[MC * KC];
 ALIGN(CACHELINE) static double Bpanel[KC * NC];
 ALIGN(CACHELINE) static double C_temp[MC * NC];
 
-// 4x4 micro kernel (no AVX) - transposed A version
+// Optimized 4x4 micro kernel with loop unrolling
 void noavx_micro_kernel(int k, const double *A, int lda,
                          const double *B, int ldb, double *C, int ldc) {
     // Accumulate results in temporary variables
@@ -41,35 +41,100 @@ void noavx_micro_kernel(int k, const double *A, int lda,
     double c20 = 0.0, c21 = 0.0, c22 = 0.0, c23 = 0.0;
     double c30 = 0.0, c31 = 0.0, c32 = 0.0, c33 = 0.0;
     
-    // Compute matrix multiplication along k dimension
-    for (int l = 0; l < k; l++) {
-        // Load elements from A (transposed access pattern)
-        double a0 = A[l + 0 * lda];  // Transposed access pattern
-        double a1 = A[l + 1 * lda];
-        double a2 = A[l + 2 * lda];
-        double a3 = A[l + 3 * lda];
+    // Unroll the k loop for better performance
+    int l = 0;
+    for (; l < k - 4; l += 4) {
+        // Process first k iteration
+        double a0 = A[0 + l * lda];
+        double a1 = A[1 + l * lda];
+        double a2 = A[2 + l * lda];
+        double a3 = A[3 + l * lda];
         
-        // Load elements from B
         double b0 = B[l + 0 * ldb];
         double b1 = B[l + 1 * ldb];
         double b2 = B[l + 2 * ldb];
         double b3 = B[l + 3 * ldb];
         
-        // Compute matrix multiplication (unchanged)
+        c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
+        c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
+        c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
+        c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
+        
+        // Process second k iteration
+        a0 = A[0 + (l+1) * lda];
+        a1 = A[1 + (l+1) * lda];
+        a2 = A[2 + (l+1) * lda];
+        a3 = A[3 + (l+1) * lda];
+        
+        b0 = B[(l+1) + 0 * ldb];
+        b1 = B[(l+1) + 1 * ldb];
+        b2 = B[(l+1) + 2 * ldb];
+        b3 = B[(l+1) + 3 * ldb];
+        
+        c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
+        c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
+        c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
+        c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
+        
+        // Process third k iteration
+        a0 = A[0 + (l+2) * lda];
+        a1 = A[1 + (l+2) * lda];
+        a2 = A[2 + (l+2) * lda];
+        a3 = A[3 + (l+2) * lda];
+        
+        b0 = B[(l+2) + 0 * ldb];
+        b1 = B[(l+2) + 1 * ldb];
+        b2 = B[(l+2) + 2 * ldb];
+        b3 = B[(l+2) + 3 * ldb];
+        
+        c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
+        c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
+        c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
+        c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
+        
+        // Process fourth k iteration
+        a0 = A[0 + (l+3) * lda];
+        a1 = A[1 + (l+3) * lda];
+        a2 = A[2 + (l+3) * lda];
+        a3 = A[3 + (l+3) * lda];
+        
+        b0 = B[(l+3) + 0 * ldb];
+        b1 = B[(l+3) + 1 * ldb];
+        b2 = B[(l+3) + 2 * ldb];
+        b3 = B[(l+3) + 3 * ldb];
+        
         c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
         c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
         c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
         c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
     }
     
-    // Store results to C (unchanged)
+    // Handle remaining iterations
+    for (; l < k; l++) {
+        double a0 = A[0 + l * lda];
+        double a1 = A[1 + l * lda];
+        double a2 = A[2 + l * lda];
+        double a3 = A[3 + l * lda];
+        
+        double b0 = B[l + 0 * ldb];
+        double b1 = B[l + 1 * ldb];
+        double b2 = B[l + 2 * ldb];
+        double b3 = B[l + 3 * ldb];
+        
+        c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
+        c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
+        c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
+        c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
+    }
+    
+    // Store results to C
     C[0 + 0 * ldc] = c00; C[0 + 1 * ldc] = c01; C[0 + 2 * ldc] = c02; C[0 + 3 * ldc] = c03;
     C[1 + 0 * ldc] = c10; C[1 + 1 * ldc] = c11; C[1 + 2 * ldc] = c12; C[1 + 3 * ldc] = c13;
     C[2 + 0 * ldc] = c20; C[2 + 1 * ldc] = c21; C[2 + 2 * ldc] = c22; C[2 + 3 * ldc] = c23;
     C[3 + 0 * ldc] = c30; C[3 + 1 * ldc] = c31; C[3 + 2 * ldc] = c32; C[3 + 3 * ldc] = c33;
 }
 
-// DGEMM implementation with MR x NR micro kernel (NN version) - for multiples of MR/NR only, with buffer copying (A transposed version)
+// DGEMM implementation using 4x4 micro kernel with transposed B panel
 void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, int lda,
                             const double *B, int ldb, double beta, double *C, int ldc) {
     // Handle simple cases
@@ -107,26 +172,28 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
     for (int j = 0; j < n; j += NR) {
         for (int i = 0; i < m; i += MR) {
             // Initialize temporary buffer to zero
-            for (int idx = 0; idx < MR * NR; idx++) {
-                C_temp[idx] = 0.0;
-            }
-            
-            // Copy A while transposing - k rows x MR columns panel (after transpose)
-            for (int ii = 0; ii < MR; ii++) {
-                for (int l = 0; l < k; l++) {
-                    Apanel[l + ii * k] = A[(i + ii) + l * lda];
+            for (int jj = 0; jj < NR; jj++) {
+                for (int ii = 0; ii < MR; ii++) {
+                    C_temp[ii + jj * MR] = 0.0;
                 }
             }
             
-            // Copy B and multiply by alpha - k rows x NR columns panel
+            // Copy A panel - keep original orientation for micro-kernel
+            for (int l = 0; l < k; l++) {
+                for (int ii = 0; ii < MR; ii++) {
+                    Apanel[ii + l * MR] = A[(i + ii) + l * lda];
+                }
+            }
+            
+            // Copy B panel and transpose it for better cache utilization
             for (int jj = 0; jj < NR; jj++) {
                 for (int l = 0; l < k; l++) {
                     Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
                 }
             }
             
-            // Call micro kernel - using Apanel, Bpanel
-            noavx_micro_kernel(k, Apanel, k, Bpanel, k, C_temp, MR);
+            // Call micro kernel
+            noavx_micro_kernel(k, Apanel, MR, Bpanel, k, C_temp, MR);
             
             // Add results to C (apply beta)
             for (int jj = 0; jj < NR; jj++) {
