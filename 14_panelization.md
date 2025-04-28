@@ -69,63 +69,62 @@ for (int p = 0; p < pb; p++) {
 
 ここからは行列の転置がDGEMM性能に与える影響について説明します。C/C++では配列は行優先（row-major）で格納されるため、行列乗算のような処理では、メモリアクセスパターンが非効率になる場合があります。
 
-## 行列Aをそのまま使用する実装
+## 行列Bをそのまま使用する実装
 
-最初の実装では、行列Aをそのままの形で使用しています：
+最初の実装では、行列Bをそのままの形で使用しています：
 
 ```cpp
 // Allocate temporary buffers
 double Apanel[MC * KC];
 
-// Copy A - MR rows x k columns block
-for (int l = 0; l < k; l++) {
-    for (int ii = 0; ii < MR; ii++) {
-        Apanel[ii + l * MR] = A[(i + ii) + l * lda];
+
+// Copy B and multiply by alpha - k rows x NR columns panel
+for (int jj = 0; jj < NR; jj++) {
+    for (int l = 0; l < k; l++) {
+        Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
     }
 }
 
 // マイクロカーネルでのアクセス
-double a0 = A[0 + l * lda];
-double a1 = A[1 + l * lda];
-double a2 = A[2 + l * lda];
-double a3 = A[3 + l * lda];
+double b0 = B[l + 0 * ldb];
+double b1 = B[l + 1 * ldb];
+double b2 = B[l + 2 * ldb];
+double b3 = B[l + 3 * ldb];
 ```
+この方法では、マイクロカーネル内で行列Bの要素にアクセスする際、`l`が変化すると大きなメモリアドレスの変化（ストライド）が生じます。このような非連続的なメモリアクセスはキャッシュミスを引き起こし、パフォーマンスを低下させる原因となります。
 
-この方法では、マイクロカーネル内で行列Aの要素にアクセスする際、`l`が変化すると大きなメモリアドレスの変化（ストライド）が生じます。このような非連続的なメモリアクセスはキャッシュミスを引き起こし、パフォーマンスを低下させる原因となります。
+## 行列Bを転置して使用する実装
 
-## 行列Aを転置して使用する実装
-
-提供されたコードサンプルの2つ目の実装では、行列Aをコピーする際に転置を行っています：
+提供されたコードサンプルの2つ目の実装では、行列Bをコピーする際に転置を行っています：
 
 ```cpp
-// Allocate temporary buffers - 転置するので KC×MC
-double Apanel[KC * MC]; 
+// Allocate temporary buffers - 転置するので NCxKC
+double Bpanel[NC*KC];
 
-// Copy A while transposing - k rows x MR columns block (after transpose)
-for (int ii = 0; ii < MR; ii++) {
+// Copy B panel and transpose it for better cache utilization
+for (int jj = 0; jj < NR; jj++) {
     for (int l = 0; l < k; l++) {
-        Apanel[l + ii * k] = A[(i + ii) + l * lda];
-    }
+            Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
+        }
 }
 
 // マイクロカーネルでのアクセス（転置済みのアクセスパターン）
-double a0 = A[l + 0 * lda];
-double a1 = A[l + 1 * lda];
-double a2 = A[l + 2 * lda];
-double a3 = A[l + 3 * lda];
+double b0 = B[l + 0 * ldb];
+double b1 = B[l + 1 * ldb];
+double b2 = B[l + 2 * ldb];
+double b3 = B[l + 3 * ldb];
 ```
+この実装ではカーネル内ではコード自体は同じになってます。しかし転置をとったことで、重要な変更点が2つあります：
 
-この実装では、重要な変更点が2つあります：
-
-1. **行列Aの格納方法**: `Apanel`のメモリレイアウトが`KC * MC`となり、データの物理的な配置が変わります。
-2. **コピー時の転置**: 内側と外側のループが入れ替わり、データを転置しながらコピーします。
+1. **カーネルの変更点の少なさ**: 元のB行列では離れた位置にあるデータが、Bpanelでは隣接して配置されるため、パフォーマンスが向上します。
+2. **コピー時の転置**: 内側と外側のループが入れ替わり、データを転置しながらコピーします。ついでにαもかけておきます。
 
 ## 転置した場合の計算結果
 
 ![DGEMM ベンチマークプロット](14/dgemm_benchmark_comparison_plot.png)
 
 1. パネルへのコピーが入るため、どうしても遅くなります。4x4のカーネルは、コピーが入らないため、その分のパフォーマンス落ちません。
-2. 行列のサイズが64, 128, 256の倍数のときにパフォーマンスが大きく落ちる。これは、キャッシュのL1/L2 キャッシュの セット衝突 (conflict-miss)が起こるのが主な原因です。少しずらすと改善します。対処は後に行う予定です。たとえば、IntelMKLでも[Tip 6: Avoid Leading Dimensions that are Multiples of 256](https://www.intel.com/content/www/us/en/developer/articles/technical/a-simple-example-to-measure-the-performance-of-an-intel-mkl-function.html)となってます。
+2. 行列のサイズが64, 128, 256の倍数のときにパフォーマンスが落ちます。これは、キャッシュのL1/L2 キャッシュの セット衝突 (conflict-miss)が起こるのが主な原因です。少しずらすと改善します。対処は後に行う予定です。たとえば、IntelMKLでも[Tip 6: Avoid Leading Dimensions that are Multiples of 256](https://www.intel.com/content/www/us/en/developer/articles/technical/a-simple-example-to-measure-the-performance-of-an-intel-mkl-function.html)となってます。
 3. どのようなサイズでもnaive実装、4x4カーネル版より遅くなります。心理的には苦しいところです。
 
 ## 転置による性能への影響
