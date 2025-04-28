@@ -125,8 +125,8 @@ double a3 = A[l + 3 * lda];
 ![DGEMM ベンチマークプロット](14/dgemm_benchmark_comparison_plot.png)
 
 1. パネルへのコピーが入るため、どうしても遅くなります。4x4のカーネルは、コピーが入らないため、その分のパフォーマンス落ちません。
-2. 行列のサイズが64, 128, 256の倍数のときにパフォーマンスが大きく落ちる。これは、キャッシュのL1/L2 キャッシュの セット衝突 (conflict-miss)が起こるのが主な原因です。少しずらすと改善します。対処は後に行う予定です。
-3. どのようなサイズでもnaive実装、4x4カーネル版より遅くなります。
+2. 行列のサイズが64, 128, 256の倍数のときにパフォーマンスが大きく落ちる。これは、キャッシュのL1/L2 キャッシュの セット衝突 (conflict-miss)が起こるのが主な原因です。少しずらすと改善します。対処は後に行う予定です。たとえば、IntelMKLでも[Tip 6: Avoid Leading Dimensions that are Multiples of 256](https://www.intel.com/content/www/us/en/developer/articles/technical/a-simple-example-to-measure-the-performance-of-an-intel-mkl-function.html)となってます。
+3. どのようなサイズでもnaive実装、4x4カーネル版より遅くなります。心理的には苦しいところです。
 
 ## 転置による性能への影響
 
