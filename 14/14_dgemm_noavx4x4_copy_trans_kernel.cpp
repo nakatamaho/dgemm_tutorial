@@ -49,11 +49,11 @@ void noavx_micro_kernel(int k, const double *A, int lda,
         double a2 = A[2 + l * lda];
         double a3 = A[3 + l * lda];
         
-        // Load elements from B
-        double b0 = B[l + 0 * ldb];
-        double b1 = B[l + 1 * ldb];
-        double b2 = B[l + 2 * ldb];
-        double b3 = B[l + 3 * ldb];
+        // Load elements from B (transposed access pattern)
+        double b0 = B[0 + l * ldb];
+        double b1 = B[1 + l * ldb];
+        double b2 = B[2 + l * ldb];
+        double b3 = B[3 + l * ldb];
         
         // Compute matrix multiplication
         c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
@@ -123,12 +123,12 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
             // Copy B panel and transpose it for better cache utilization
             for (int jj = 0; jj < NR; jj++) {
                 for (int l = 0; l < k; l++) {
-                    Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
+                    Bpanel[jj + l * NR] = alpha * B[l + (j + jj) * ldb];
                 }
             }
             
             // Call micro kernel
-            noavx_micro_kernel(k, Apanel, MR, Bpanel, k, C_temp, MR);
+            noavx_micro_kernel(k, Apanel, MR, Bpanel, NR, C_temp, MR);
             
             // Add results to C (apply beta)
             for (int jj = 0; jj < NR; jj++) {
