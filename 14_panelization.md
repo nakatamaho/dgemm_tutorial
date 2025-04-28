@@ -72,12 +72,12 @@ for (int p = 0; p < pb; p++) {
 
 ```cpp
 // Allocate temporary buffers
-double Ablock[MR * KMAX];
+double Apanel[MC * KC];
 
 // Copy A - MR rows x k columns block
 for (int l = 0; l < k; l++) {
     for (int ii = 0; ii < MR; ii++) {
-        Ablock[ii + l * MR] = A[(i + ii) + l * lda];
+        Apanel[ii + l * MR] = A[(i + ii) + l * lda];
     }
 }
 
@@ -95,13 +95,13 @@ double a3 = A[3 + l * lda];
 提供されたコードサンプルの2つ目の実装では、行列Aをコピーする際に転置を行っています：
 
 ```cpp
-// Allocate temporary buffers - 転置するので k×MR
-double Ablock[KMAX * MR];
+// Allocate temporary buffers - 転置するので KC×MC
+double Apanel[KC * MC]; 
 
 // Copy A while transposing - k rows x MR columns block (after transpose)
 for (int ii = 0; ii < MR; ii++) {
     for (int l = 0; l < k; l++) {
-        Ablock[l + ii * k] = A[(i + ii) + l * lda];
+        Apanel[l + ii * k] = A[(i + ii) + l * lda];
     }
 }
 
@@ -114,7 +114,7 @@ double a3 = A[l + 3 * lda];
 
 この実装では、重要な変更点が2つあります：
 
-1. **行列Aの格納方法**: `Ablock`のメモリレイアウトが`KMAX * MR`となり、データの物理的な配置が変わります。
+1. **行列Aの格納方法**: `Apanel`のメモリレイアウトが`KC * MC`となり、データの物理的な配置が変わります。
 2. **コピー時の転置**: 内側と外側のループが入れ替わり、データを転置しながらコピーします。
 
 ## 転置による性能への影響
