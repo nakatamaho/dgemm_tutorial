@@ -16,8 +16,8 @@
 #define MR 4
 #define NR 4
 #define MC 240
-#define NC 120
-#define KC 256
+#define NC 240
+#define KC 240
 
 #define CACHELINE 64
 #if defined(__GNUC__) || defined(__clang__)
