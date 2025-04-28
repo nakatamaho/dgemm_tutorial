@@ -39,7 +39,7 @@ def get_cpu_info():
                 pass
     return cpu_info
 
-def read_and_plot_csv(main_csv="dgemm_benchmark_noavx4x4kernel_results.csv", 
+def read_and_plot_csv(main_csv="dgemm_benchmark_noavx_block_kernel_results.csv", 
                      comparison_csv=None):
     """CSVファイルを読み込み、グラフを描画する関数
     Parameters:

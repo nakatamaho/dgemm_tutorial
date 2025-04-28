@@ -104,12 +104,12 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
     }
 
     // Process by L3 cache blocks
-    for (int jl3 = 0; jl3 < n; jl3 += NB) {
-        for (int il3 = 0; il3 < m; il3 += MB) {
-            for (int kl3 = 0; kl3 < k; kl3 += KB) {
+    for (int jl3 = 0; jl3 < n; jl3 += NC) {
+        for (int il3 = 0; il3 < m; il3 += MC) {
+            for (int kl3 = 0; kl3 < k; kl3 += KC) {
                 // Process by blocks (MR x NR blocks)
-		for (int j = jl3; j < std::min(jl3 + NB, n); j += NR) {
-		    for (int i = il3; i < std::min(il3 + MB, m); i += MR) {
+		for (int j = jl3; j < std::min(jl3 + NC, n); j += NR) {
+		    for (int i = il3; i < std::min(il3 + MC, m); i += MR) {
                         // Initialize temporary buffer to zero
                         for (int idx = 0; idx < MR * NR; idx++) {
                             C_temp[idx] = 0.0;
@@ -117,20 +117,20 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
                         
                         // Copy A while transposing - k rows x MR columns block (after transpose)
                         for (int ii = 0; ii < MR; ii++) {
-			    for (int l = kl3; l < std::min(kl3 + KB, k); l++) {
-                                Ablock[(l - kl3) + ii * KB] = A[(i + ii) + l * lda];
+			    for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
+                                Apanel[(l - kl3) + ii * KC] = A[(i + ii) + l * lda];
                             }
                         }
                         
                         // Copy B and multiply by alpha - k rows x NR columns block
                         for (int jj = 0; jj < NR; jj++) {
-			    for (int l = kl3; l < std::min(kl3 + KB, k); l++) {
-                                Bblock[(l - kl3) + jj * KB] = alpha * B[l + (j + jj) * ldb];
+			    for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
+                                Bpanel[(l - kl3) + jj * KC] = alpha * B[l + (j + jj) * ldb];
                             }
                         }
                         
-                        // Call micro kernel - using Ablock, Bblock
-			noavx_micro_kernel(std::min(KB, k - kl3), Ablock, KB, Bblock, KB, C_temp, MR);
+                        // Call micro kernel - using Apanel, Bpanel
+			noavx_micro_kernel(std::min(KC, k - kl3), Apanel, KC, Bpanel, KC, C_temp, MR);
                         
                         // Add results to C (apply beta)
                         for (int jj = 0; jj < NR; jj++) {
@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Prepare output CSV file
-    std::ofstream csv_file("dgemm_benchmark_noavx_copy_trans_kernel_results.csv");
+    std::ofstream csv_file("dgemm_benchmark_noavx_block_kernel_results.csv");
     
     if (!csv_file.is_open()) {
         std::cerr << "Error: Could not open output file." << std::endl;
@@ -337,7 +337,7 @@ int main(int argc, char *argv[]) {
     }
 
     csv_file.close();
-    std::cout << "Benchmark complete. Results saved to dgemm_benchmark_noavx_copy_trans_kernel_results.csv" << std::endl;
+    std::cout << "Benchmark complete. Results saved to dgemm_benchmark_noavx_block_kernel_results.csv" << std::endl;
 
     return 0;
 }
