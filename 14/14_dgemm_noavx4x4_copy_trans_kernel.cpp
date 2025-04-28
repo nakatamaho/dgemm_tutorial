@@ -250,16 +250,11 @@ int main(int argc, char *argv[]) {
     }
 
     // Sizes that are multiples of 8 (128 to 1024)
-    for (int size = 128; size <= 1024; size += 8) {
+    for (int size = 128; size <= 3500; size += 8) {
         size_set.insert(size);
     }
 
-    // Sizes that are multiples of 128 (1280 and up)
-    for (int size = 1280; size <= 3500; size += 128) {
-        size_set.insert(size);
-    }
-
-    // Convert set to vector (set is already sorted)
+   // Convert set to vector (set is already sorted)
     std::vector<int> sizes(size_set.begin(), size_set.end());
 
     const int num_trials = 5;  // 5 trials
