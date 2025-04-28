@@ -28,7 +28,7 @@
     #define ALIGN(x)
 #endif
 
-ALIGN(CACHELINE) static double Apanel[KC * MC]; // Transposed, so k×MR
+ALIGN(CACHELINE) static double Apanel[KC * MC]; // Transposed, so KCxMC
 ALIGN(CACHELINE) static double Bpanel[KC * NC];
 ALIGN(CACHELINE) static double C_temp[MC * NC];
 
