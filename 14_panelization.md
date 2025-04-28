@@ -9,6 +9,9 @@ DGEMMの最適化において、CPUのキャッシュ階層を効率的に活用
 現在の実装では、行列を4×4の小さなブロックに分割して処理しています：
 
 ```cpp
+#define MR 4
+#define NR 4
+
 // Process by blocks (MR x NR blocks)
 for (int j = 0; j < n; j += NR) {
     for (int i = 0; i < m; i += MR) {
