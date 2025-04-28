@@ -15,18 +15,24 @@
 // Define block sizes
 #define MR 4
 #define NR 4
-#define KMAX 4096
+#define MC 256
+#define NC 256
+#define KC 256
 
-#define NB 256
-#define MB 256
-#define KB 256
+#define CACHELINE 64
+#if defined(__GNUC__) || defined(__clang__)
+    #define ALIGN(x) __attribute__((aligned(x)))
+#elif defined(_MSC_VER)
+    #define ALIGN(x) __declspec(align(x))
+#else
+    #define ALIGN(x)
+#endif
 
-// Allocate temporary buffers (C-style)
-double C_temp[MR * NR];
-double Ablock[KMAX * MR];  // Transposed, so k×MR
-double Bblock[KMAX * NR];
+ALIGN(CACHELINE) static double Apanel[KC * MC]; // Transposed, so KCxMC
+ALIGN(CACHELINE) static double Bpanel[KC * NC];
+ALIGN(CACHELINE) static double C_temp[MC * NC];
 
-// Micro kernel (no AVX) - transposed A version
+// 4x4 micro kernel (no AVX) - transposed A version
 void noavx_micro_kernel(int k, const double *A, int lda,
                          const double *B, int ldb, double *C, int ldc) {
     // Accumulate results in temporary variables
@@ -65,7 +71,7 @@ void noavx_micro_kernel(int k, const double *A, int lda,
 
 // DGEMM implementation with MR x NR micro kernel (NN version) - for multiples of MR/NR only, with buffer copying (A transposed version)
 void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, int lda,
-                           const double *B, int ldb, double beta, double *C, int ldc) {
+                            const double *B, int ldb, double beta, double *C, int ldc) {
     // Handle simple cases
     if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
         return;  // Nothing to do
@@ -146,7 +152,6 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
             }
         }
     }
-
 }
 
 // Naive DGEMM implementation for verification
@@ -265,7 +270,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Sizes that are multiples of 8 (128 to 1024)
-    for (int size = 128; size <= 4000; size += 8) {
+    for (int size = 128; size <= 3500; size += 8) {
         size_set.insert(size);
     }
 
