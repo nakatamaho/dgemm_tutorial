@@ -68,7 +68,7 @@ Ryzen Threadripper 3970X の基本スペックは以下のようになります�
 - [AMD EPYC™ 7002 tuning guide](https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/tuning-guides/amd-epyc-7002-tg-hpc-56827.pdf)
 も役に立ちます。EPYCはRyzenのサーバ向けの強化されたCPUです。Zen2であることは同じです。Chap9のDGEMMの章は特に役に立ちます。
 
-- CPUがどんな構成になっているかは、[AMD Ryzen Threadripper 3960X & 3970X CPU Review](https://www.kitguru.net/components/cpu/luke-hill/amd-ryzen-threadripper-3960x-3970x-cpu-review/2/) が役に立ちます。
+- CPUがどんな構成になっているかは、[AMD Ryzen Threadripper 3960X & 3970X CPU Review](https://www.kitguru.net/components/cpu/luke-hill/amd-ryzen-threadripper-3960x-3970x-cpu-review/2/) が役に立ちます。それによると、Ryzen 3970Xは、CCD(Core Complex Die; 小型ダイ。実際のCPUコアとL3キャッシュを内蔵)が4個あり、各CCDは2個 CCXを内包します。CXXは4コアあります。コアごとに 32 KB L1 D、32 KB L1 I、512 KB L2を備え、CCX単位、つまり4コアで16 MB L3を共有します。従って、全体としては16*2*4=128MBのL3キャッシュがあります。
 
 - [ChatGPTで検索](https://chatgpt.com/share/680f60cb-063c-800e-92c4-62f410668525)すると情報をまとめてくれます。
 
