@@ -28,11 +28,11 @@
     #define ALIGN(x)
 #endif
 
-ALIGN(CACHELINE) static double Apanel[KC * MC]; // Transposed, so KCxMC
-ALIGN(CACHELINE) static double Bpanel[KC * NC];
+ALIGN(CACHELINE) static double Apanel[MC * KC];
+ALIGN(CACHELINE) static double Bpanel[KC * NC]; // B panel with transpose orientation
 ALIGN(CACHELINE) static double C_temp[MC * NC];
 
-// 4x4 micro kernel (no AVX) - transposed A version
+// 4x4 micro kernel (no AVX) - B transposed version
 void noavx_micro_kernel(int k, const double *A, int lda,
                          const double *B, int ldb, double *C, int ldc) {
     // Accumulate results in temporary variables
@@ -43,33 +43,33 @@ void noavx_micro_kernel(int k, const double *A, int lda,
     
     // Compute matrix multiplication along k dimension
     for (int l = 0; l < k; l++) {
-        // Load elements from A (transposed access pattern)
-        double a0 = A[l + 0 * lda];  // Transposed access pattern
-        double a1 = A[l + 1 * lda];
-        double a2 = A[l + 2 * lda];
-        double a3 = A[l + 3 * lda];
+        // Load elements from A (normal access pattern)
+        double a0 = A[0 + l * lda];
+        double a1 = A[1 + l * lda];
+        double a2 = A[2 + l * lda];
+        double a3 = A[3 + l * lda];
         
-        // Load elements from B
-        double b0 = B[l + 0 * ldb];
-        double b1 = B[l + 1 * ldb];
-        double b2 = B[l + 2 * ldb];
-        double b3 = B[l + 3 * ldb];
+        // Load elements from B (transposed access pattern)
+        double b0 = B[0 + l * ldb];
+        double b1 = B[1 + l * ldb];
+        double b2 = B[2 + l * ldb];
+        double b3 = B[3 + l * ldb];
         
-        // Compute matrix multiplication (unchanged)
+        // Compute matrix multiplication
         c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
         c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
         c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
         c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
     }
     
-    // Store results to C (unchanged)
+    // Store results to C
     C[0 + 0 * ldc] = c00; C[0 + 1 * ldc] = c01; C[0 + 2 * ldc] = c02; C[0 + 3 * ldc] = c03;
     C[1 + 0 * ldc] = c10; C[1 + 1 * ldc] = c11; C[1 + 2 * ldc] = c12; C[1 + 3 * ldc] = c13;
     C[2 + 0 * ldc] = c20; C[2 + 1 * ldc] = c21; C[2 + 2 * ldc] = c22; C[2 + 3 * ldc] = c23;
     C[3 + 0 * ldc] = c30; C[3 + 1 * ldc] = c31; C[3 + 2 * ldc] = c32; C[3 + 3 * ldc] = c33;
 }
 
-// DGEMM implementation with MR x NR micro kernel (NN version) - for multiples of MR/NR only, with buffer copying (A transposed version)
+// DGEMM implementation with MR x NR micro kernel (NN version) - for multiples of MR/NR only, with buffer copying (B transposed version)
 void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, int lda,
                             const double *B, int ldb, double beta, double *C, int ldc) {
     // Handle simple cases
@@ -108,29 +108,29 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
         for (int il3 = 0; il3 < m; il3 += MC) {
             for (int kl3 = 0; kl3 < k; kl3 += KC) {
                 // Process by blocks (MR x NR blocks)
-		for (int j = jl3; j < std::min(jl3 + NC, n); j += NR) {
-		    for (int i = il3; i < std::min(il3 + MC, m); i += MR) {
+                for (int j = jl3; j < std::min(jl3 + NC, n); j += NR) {
+                    for (int i = il3; i < std::min(il3 + MC, m); i += MR) {
                         // Initialize temporary buffer to zero
                         for (int idx = 0; idx < MR * NR; idx++) {
                             C_temp[idx] = 0.0;
                         }
                         
-                        // Copy A while transposing - k rows x MR columns block (after transpose)
-                        for (int ii = 0; ii < MR; ii++) {
-			    for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
-                                Apanel[(l - kl3) + ii * KC] = A[(i + ii) + l * lda];
+                        // Copy A without transposing - MR rows x k columns block
+                        for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
+                            for (int ii = 0; ii < MR; ii++) {
+                                Apanel[ii + (l - kl3) * MR] = A[(i + ii) + l * lda];
                             }
                         }
                         
-                        // Copy B and multiply by alpha - k rows x NR columns block
-                        for (int jj = 0; jj < NR; jj++) {
-			    for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
-                                Bpanel[(l - kl3) + jj * KC] = alpha * B[l + (j + jj) * ldb];
+                        // Copy B while transposing and multiply by alpha - NR rows x k columns block (after transpose)
+                        for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
+                            for (int jj = 0; jj < NR; jj++) {
+                                Bpanel[jj + (l - kl3) * NR] = alpha * B[l + (j + jj) * ldb];
                             }
                         }
                         
-                        // Call micro kernel - using Apanel, Bpanel
-			noavx_micro_kernel(std::min(KC, k - kl3), Apanel, KC, Bpanel, KC, C_temp, MR);
+                        // Call micro kernel with proper leading dimensions
+                        noavx_micro_kernel(std::min(KC, k - kl3), Apanel, MR, Bpanel, NR, C_temp, MR);
                         
                         // Add results to C (apply beta)
                         for (int jj = 0; jj < NR; jj++) {
