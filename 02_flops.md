@@ -63,7 +63,7 @@ Ryzen Threadripper 3970X の基本スペックは以下のようになります�
 
 ## 4. Ryzen Threadripper 3970X の基本スペック詳細
 
-これ以上詳しい仕様を探すのは結構骨がいります。Ryzenシリーズはコンシューマ系なので詳しい情報はあまりでてきません。同じアーキテクチャのZen2のサーバー版である、EPYCで検索するとよいでしょう。
+これ以上詳しい仕様を探すのは結構骨がいります。Ryzenシリーズはコンシューマ系なので公式から詳しい情報はあまりでてきません。同じアーキテクチャのZen2のサーバー版である、EPYCで検索するとよいでしょう。
 たとえば、
 - [AMD EPYC™ 7002 tuning guide](https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/tuning-guides/amd-epyc-7002-tg-hpc-56827.pdf)
 も役に立ちます。EPYCはRyzenのサーバ向けの強化されたCPUです。Zen2であることは同じです。Chap9のDGEMMの章は特に役に立ちます。
