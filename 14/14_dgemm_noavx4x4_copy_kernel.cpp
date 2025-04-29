@@ -71,18 +71,16 @@ void noavx_micro_kernel(int k, const double *A, int lda,
 
 // DGEMM implementation using 4x4 micro kernel (NN version) - for multiples of MR/NR only, with buffer copying
 void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, int lda,
-                            const double *B, int ldb, double beta, double *C, int ldc) {
+                           const double *B, int ldb, double beta, double *C, int ldc) {
     // Handle simple cases
     if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
         return;  // Nothing to do
     }
-    
     // Check for size multiples of MR/NR
     if (m % MR != 0 || n % NR != 0 || k % 4 != 0) {
         std::cerr << "Error: Matrix dimensions must be multiples of MR/NR." << std::endl;
         return;
     }
-    
     // Handle alpha == 0 case
     if (alpha == 0.0) {
         if (beta == 0.0) {
@@ -111,21 +109,21 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
                 C_temp[idx] = 0.0;
             }
             
-            // Copy A - MR rows x k columns panel
+            // Pack A panel (column-major)
             for (int l = 0; l < k; l++) {
                 for (int ii = 0; ii < MR; ii++) {
                     Apanel[ii + l * MR] = A[(i + ii) + l * lda];
                 }
             }
             
-            // Copy B and multiply by alpha - k rows x NR columns panel
-            for (int jj = 0; jj < NR; jj++) {
-                for (int l = 0; l < k; l++) {
+            // Pack B panel (column-major, no transpose)
+            for (int l = 0; l < k; l++) {
+                for (int jj = 0; jj < NR; jj++) {
                     Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
                 }
             }
             
-            // Call micro kernel - using Apanel, Bpanel
+            // Call micro kernel
             noavx_micro_kernel(k, Apanel, MR, Bpanel, k, C_temp, MR);
             
             // Add results to C (apply beta)
@@ -143,6 +141,7 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
         }
     }
 }
+
 
 // Naive DGEMM implementation for verification
 void dgemm_naive(int m, int n, int k, double alpha, const double *A, int lda,

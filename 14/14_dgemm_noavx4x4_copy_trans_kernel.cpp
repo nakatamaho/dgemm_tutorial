@@ -76,13 +76,13 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
     if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
         return;  // Nothing to do
     }
-    
+
     // Check for size multiples of MR/NR
     if (m % MR != 0 || n % NR != 0 || k % 4 != 0) {
         std::cerr << "Error: Matrix dimensions must be multiples of MR/NR." << std::endl;
         return;
     }
-    
+
     // Handle alpha == 0 case
     if (alpha == 0.0) {
         if (beta == 0.0) {
@@ -102,10 +102,14 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
         }
         return;
     }
-    
+
     // Process by panels (MR x NR panels)
     for (int j = 0; j < n; j += NR) {
+        int nr = std::min(NR, n - j);
+        
         for (int i = 0; i < m; i += MR) {
+            int mr = std::min(MR, m - i);
+            
             // Initialize temporary buffer to zero
             for (int jj = 0; jj < NR; jj++) {
                 for (int ii = 0; ii < MR; ii++) {
@@ -115,15 +119,25 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
             
             // Copy A panel - keep original orientation for micro-kernel
             for (int l = 0; l < k; l++) {
-                for (int ii = 0; ii < MR; ii++) {
+                for (int ii = 0; ii < mr; ii++) {
                     Apanel[ii + l * MR] = A[(i + ii) + l * lda];
+                }
+                // Zero padding for A
+                for (int ii = mr; ii < MR; ii++) {
+                    Apanel[ii + l * MR] = 0.0;
                 }
             }
             
             // Copy B panel and transpose it for better cache utilization
-            for (int jj = 0; jj < NR; jj++) {
+            for (int jj = 0; jj < nr; jj++) {
                 for (int l = 0; l < k; l++) {
                     Bpanel[jj + l * NR] = alpha * B[l + (j + jj) * ldb];
+                }
+            }
+            // Zero padding for B
+            for (int jj = nr; jj < NR; jj++) {
+                for (int l = 0; l < k; l++) {
+                    Bpanel[jj + l * NR] = 0.0;
                 }
             }
             
@@ -131,8 +145,8 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
             noavx_micro_kernel(k, Apanel, MR, Bpanel, NR, C_temp, MR);
             
             // Add results to C (apply beta)
-            for (int jj = 0; jj < NR; jj++) {
-                for (int ii = 0; ii < MR; ii++) {
+            for (int jj = 0; jj < nr; jj++) {
+                for (int ii = 0; ii < mr; ii++) {
                     if (beta == 0.0) {
                         // beta = 0 case
                         C[(i + ii) + (j + jj) * ldc] = C_temp[ii + jj * MR];
