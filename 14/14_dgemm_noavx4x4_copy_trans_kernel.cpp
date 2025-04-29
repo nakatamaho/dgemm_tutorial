@@ -29,10 +29,10 @@
 #endif
 
 ALIGN(CACHELINE) static double Apanel[MC * KC];
-ALIGN(CACHELINE) static double Bpanel[KC * NC];
+ALIGN(CACHELINE) static double Bpanel[KC * NC]; // B panel with transpose orientation
 ALIGN(CACHELINE) static double C_temp[MC * NC];
 
-// Optimized 4x4 micro kernel without loop unrolling
+// 4x4 micro kernel (no AVX) - B transposed version
 void noavx_micro_kernel(int k, const double *A, int lda,
                          const double *B, int ldb, double *C, int ldc) {
     // Accumulate results in temporary variables
@@ -43,7 +43,7 @@ void noavx_micro_kernel(int k, const double *A, int lda,
     
     // Compute matrix multiplication along k dimension
     for (int l = 0; l < k; l++) {
-        // Load elements from A
+        // Load elements from A (normal access pattern)
         double a0 = A[0 + l * lda];
         double a1 = A[1 + l * lda];
         double a2 = A[2 + l * lda];
