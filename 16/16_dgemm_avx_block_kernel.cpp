@@ -16,8 +16,8 @@
 // Define block sizes
 #define MR 4
 #define NR 4
-#define MC 256
-#define NC 256
+#define MC 240
+#define NC 4096
 #define KC 256
 
 #define CACHELINE 64
@@ -89,7 +89,6 @@ void avx2_micro_kernel_4x4_aligned(int k,
     C[3 + 2 * ldc] = c3_arr[2]; C[3 + 3 * ldc] = c3_arr[3];
 }
 
-
 // DGEMM implementation using 4x4 micro kernel with transposed B panel, using L3 cache blocking
 void dgemm_avx_kernel_nn(int m, int n, int k, double alpha, 
                           const double * __restrict A, int lda,
@@ -125,56 +124,77 @@ void dgemm_avx_kernel_nn(int m, int n, int k, double alpha,
         }
         return;
     }
-
-    // Process by blocks (MC x NC blocks)
-    for (int jc = 0; jc < n; jc += NC) {
-        int jb = std::min(n - jc, NC);
+    
+    // Process by blocks
+    for (int j = 0; j < n; j += NC) {
+        int nc = std::min(NC, n - j);
         
-        // Copy B panel and apply alpha at this level
-        for (int pc = 0; pc < k; pc += KC) {
-            int pb = std::min(k - pc, KC);
+        for (int p = 0; p < k; p += KC) {
+            int kc = std::min(KC, k - p);
             
-            // Create B panel (k×NC) with transposition for better cache utilization
-            for (int jp = 0; jp < jb; jp++) {
-                for (int l = 0; l < pb; l++) {
-                    Bpanel[jp + l * jb] = alpha * B[(pc + l) + (jc + jp) * ldb];
-                }
-            }
-            const double beta_block = (pc == 0) ? beta : 1.0;
-
-            // Process A panel (MC×k)
-            for (int ic = 0; ic < m; ic += MC) {
-                int ib = std::min(m - ic, MC);
-
-                // Create A panel
-                for (int l = 0; l < pb; l++) {
-                    for (int ip = 0; ip < ib; ip++) {
-                        Apanel[ip + l * ib] = A[(ic + ip) + (pc + l) * lda];
+            // Apply beta only on first k-block
+            const double beta_block = (p == 0) ? beta : 1.0;
+            
+            // Direct packing of B with alpha applied
+            for (int jr = 0; jr < nc; jr += NR) {
+                int nr = std::min(NR, nc - jr);
+                
+                for (int l = 0; l < kc; l++) {
+                    for (int jj = 0; jj < nr; jj++) {
+                        Bpanel[jr * kc + l * NR + jj] = alpha * B[(p + l) + (j + jr + jj) * ldb];
+                    }
+                    // Zero padding
+                    for (int jj = nr; jj < NR; jj++) {
+                        Bpanel[jr * kc + l * NR + jj] = 0.0;
                     }
                 }
-
-                // Process by panels (MR x NR panels)
-                for (int j = 0; j < jb; j += NR) {
-                    int nb = std::min(jb - j, NR);
+            }
+            
+            for (int i = 0; i < m; i += MC) {
+                int mc = std::min(MC, m - i);
+                
+                // Pack A block
+                for (int ir = 0; ir < mc; ir += MR) {
+                    int mr = std::min(MR, mc - ir);
                     
-                    for (int i = 0; i < ib; i += MR) {
-                        int mb = std::min(ib - i, MR);
+                    for (int l = 0; l < kc; l++) {
+                        for (int ii = 0; ii < mr; ii++) {
+                            Apanel[ir * kc + l * MR + ii] = A[(i + ir + ii) + (p + l) * lda];
+                        }
+                        // Zero padding
+                        for (int ii = mr; ii < MR; ii++) {
+                            Apanel[ir * kc + l * MR + ii] = 0.0;
+                        }
+                    }
+                }
+                
+                for (int jr = 0; jr < nc; jr += NR) {
+                    int nr = std::min(NR, nc - jr);
+                    
+                    for (int ir = 0; ir < mc; ir += MR) {
+                        int mr = std::min(MR, mc - ir);
                         
-                        // Initialize temporary buffer to zero
-                        for (int jj = 0; jj < nb; jj++) {
-                            for (int ii = 0; ii < mb; ii++) {
+                        // Initialize C_temp to zero
+                        for (int jj = 0; jj < NR; jj++) {
+                            for (int ii = 0; ii < MR; ii++) {
                                 C_temp[ii + jj * MR] = 0.0;
                             }
                         }
                         
-                        // Call micro kernel with transposed B panel
-                        avx2_micro_kernel_4x4_aligned(pb, &Apanel[i + 0 * ib], ib, &Bpanel[j], jb, C_temp, MR);
+                        // Call micro-kernel
+                        avx2_micro_kernel_4x4_aligned(kc, 
+                                          &Apanel[ir * kc], MR, 
+                                          &Bpanel[jr * kc], NR, 
+                                          C_temp, MR);
                         
-                        // Add results to C (apply beta)
-                        for (int jj = 0; jj < nb; jj++) {
-                            for (int ii = 0; ii < mb; ii++) {
-                                C[(ic + i + ii) + (jc + j + jj) * ldc] = (beta_block == 0.0) ? C_temp[ii + jj * MR] : beta_block * C[(ic + i + ii) + (jc + j + jj) * ldc] + C_temp[ii + jj * MR];
-
+                        // Store results to C with proper beta scaling
+                        for (int jj = 0; jj < nr; jj++) {
+                            for (int ii = 0; ii < mr; ii++) {
+                                if (beta_block == 0.0) {
+                                    C[(i + ir + ii) + (j + jr + jj) * ldc] = C_temp[ii + jj * MR];
+                                } else {
+                                    C[(i + ir + ii) + (j + jr + jj) * ldc] = beta_block * C[(i + ir + ii) + (j + jr + jj) * ldc] + C_temp[ii + jj * MR];
+                                }
                             }
                         }
                     }
