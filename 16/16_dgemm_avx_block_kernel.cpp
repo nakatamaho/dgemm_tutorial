@@ -7,6 +7,7 @@
 #include <fstream>
 #include <string>
 #include <set>
+#include <immintrin.h> // For AVX2 intrinsics
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -32,46 +33,68 @@ ALIGN(CACHELINE) static double Apanel[MC * KC];
 ALIGN(CACHELINE) static double Bpanel[KC * NC]; // B panel with transpose orientation
 ALIGN(CACHELINE) static double C_temp[MC * NC];
 
-// 4x4 micro kernel (no AVX) - B transposed version
-void noavx_micro_kernel(int k, const double *A, int lda,
-                         const double *B, int ldb, double *C, int ldc) {
-    // Accumulate results in temporary variables
-    double c00 = 0.0, c01 = 0.0, c02 = 0.0, c03 = 0.0;
-    double c10 = 0.0, c11 = 0.0, c12 = 0.0, c13 = 0.0;
-    double c20 = 0.0, c21 = 0.0, c22 = 0.0, c23 = 0.0;
-    double c30 = 0.0, c31 = 0.0, c32 = 0.0, c33 = 0.0;
+// 4x4 micro kernel (using AVX2) - B transposed version
+void avx2_micro_kernel_4x4_aligned(int k,
+                                   const double * __restrict A, int lda,
+                                   const double * __restrict B, int ldb,
+                                   double       * __restrict C, int ldc) {
+    // Initialize AVX registers to accumulate results
+    __m256d c0 = _mm256_setzero_pd(); // For row 0 of C matrix (c00, c01, c02, c03)
+    __m256d c1 = _mm256_setzero_pd(); // For row 1 of C matrix (c10, c11, c12, c13)
+    __m256d c2 = _mm256_setzero_pd(); // For row 2 of C matrix (c20, c21, c22, c23)
+    __m256d c3 = _mm256_setzero_pd(); // For row 3 of C matrix (c30, c31, c32, c33)
     
     // Compute matrix multiplication along k dimension
     for (int l = 0; l < k; l++) {
-        // Load elements from A (normal access pattern)
-        double a0 = A[0 + l * lda];
-        double a1 = A[1 + l * lda];
-        double a2 = A[2 + l * lda];
-        double a3 = A[3 + l * lda];
+        // Load elements from A and broadcast to all elements
+        __m256d a0 = _mm256_set1_pd(A[0 + l * lda]); // Broadcast a0 to all elements
+        __m256d a1 = _mm256_set1_pd(A[1 + l * lda]); // Broadcast a1 to all elements
+        __m256d a2 = _mm256_set1_pd(A[2 + l * lda]); // Broadcast a2 to all elements
+        __m256d a3 = _mm256_set1_pd(A[3 + l * lda]); // Broadcast a3 to all elements
         
-        // Load elements from B (transposed access pattern)
-        double b0 = B[0 + l * ldb];
-        double b1 = B[1 + l * ldb];
-        double b2 = B[2 + l * ldb];
-        double b3 = B[3 + l * ldb];
+        // Load 4 elements from B at once (transposed access pattern) with aligned load
+        __m256d b = _mm256_load_pd(&B[0 + l * ldb]);
         
-        // Compute matrix multiplication
-        c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
-        c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
-        c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
-        c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
+        // Multiply and accumulate using FMA instructions
+        c0 = _mm256_fmadd_pd(a0, b, c0); // c0 += a0 * b
+        c1 = _mm256_fmadd_pd(a1, b, c1); // c1 += a1 * b
+        c2 = _mm256_fmadd_pd(a2, b, c2); // c2 += a2 * b
+        c3 = _mm256_fmadd_pd(a3, b, c3); // c3 += a3 * b
     }
     
-    // Store results to C
-    C[0 + 0 * ldc] = c00; C[0 + 1 * ldc] = c01; C[0 + 2 * ldc] = c02; C[0 + 3 * ldc] = c03;
-    C[1 + 0 * ldc] = c10; C[1 + 1 * ldc] = c11; C[1 + 2 * ldc] = c12; C[1 + 3 * ldc] = c13;
-    C[2 + 0 * ldc] = c20; C[2 + 1 * ldc] = c21; C[2 + 2 * ldc] = c22; C[2 + 3 * ldc] = c23;
-    C[3 + 0 * ldc] = c30; C[3 + 1 * ldc] = c31; C[3 + 2 * ldc] = c32; C[3 + 3 * ldc] = c33;
+    // Create temporary arrays for results (aligned to 64 bytes)
+    alignas(64) double c0_arr[4], c1_arr[4], c2_arr[4], c3_arr[4];
+    
+    // Store results from AVX registers to temporary arrays with aligned store
+    _mm256_store_pd(c0_arr, c0);
+    _mm256_store_pd(c1_arr, c1);
+    _mm256_store_pd(c2_arr, c2);
+    _mm256_store_pd(c3_arr, c3);
+    
+    // Store results to C matrix
+    // Row 0
+    C[0 + 0 * ldc] = c0_arr[0]; C[0 + 1 * ldc] = c0_arr[1]; 
+    C[0 + 2 * ldc] = c0_arr[2]; C[0 + 3 * ldc] = c0_arr[3];
+    
+    // Row 1
+    C[1 + 0 * ldc] = c1_arr[0]; C[1 + 1 * ldc] = c1_arr[1]; 
+    C[1 + 2 * ldc] = c1_arr[2]; C[1 + 3 * ldc] = c1_arr[3];
+    
+    // Row 2
+    C[2 + 0 * ldc] = c2_arr[0]; C[2 + 1 * ldc] = c2_arr[1]; 
+    C[2 + 2 * ldc] = c2_arr[2]; C[2 + 3 * ldc] = c2_arr[3];
+    
+    // Row 3
+    C[3 + 0 * ldc] = c3_arr[0]; C[3 + 1 * ldc] = c3_arr[1]; 
+    C[3 + 2 * ldc] = c3_arr[2]; C[3 + 3 * ldc] = c3_arr[3];
 }
 
+
 // DGEMM implementation using 4x4 micro kernel with transposed B panel, using L3 cache blocking
-void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, int lda,
-                            const double *B, int ldb, double beta, double *C, int ldc) {
+void dgemm_avx_kernel_nn(int m, int n, int k, double alpha, 
+                          const double * __restrict A, int lda,
+                          const double * __restrict B, int ldb, 
+			  double beta, double * __restrict C, int ldc) {
     // Handle simple cases
     if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
         return;  // Nothing to do
@@ -103,48 +126,55 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
         return;
     }
 
-    // Process by L3 cache blocks
-    for (int jl3 = 0; jl3 < n; jl3 += NC) {
-        for (int il3 = 0; il3 < m; il3 += MC) {
-            for (int kl3 = 0; kl3 < k; kl3 += KC) {
-                // Process by blocks (MR x NR blocks)
-                for (int j = jl3; j < std::min(jl3 + NC, n); j += NR) {
-                    for (int i = il3; i < std::min(il3 + MC, m); i += MR) {
+    // Process by blocks (MC x NC blocks)
+    for (int jc = 0; jc < n; jc += NC) {
+        int jb = std::min(n - jc, NC);
+        
+        // Copy B panel and apply alpha at this level
+        for (int pc = 0; pc < k; pc += KC) {
+            int pb = std::min(k - pc, KC);
+            
+            // Create B panel (k×NC) with transposition for better cache utilization
+            for (int jp = 0; jp < jb; jp++) {
+                for (int l = 0; l < pb; l++) {
+                    Bpanel[jp + l * jb] = alpha * B[(pc + l) + (jc + jp) * ldb];
+                }
+            }
+            const double beta_block = (pc == 0) ? beta : 1.0;
+
+            // Process A panel (MC×k)
+            for (int ic = 0; ic < m; ic += MC) {
+                int ib = std::min(m - ic, MC);
+
+                // Create A panel
+                for (int l = 0; l < pb; l++) {
+                    for (int ip = 0; ip < ib; ip++) {
+                        Apanel[ip + l * ib] = A[(ic + ip) + (pc + l) * lda];
+                    }
+                }
+
+                // Process by panels (MR x NR panels)
+                for (int j = 0; j < jb; j += NR) {
+                    int nb = std::min(jb - j, NR);
+                    
+                    for (int i = 0; i < ib; i += MR) {
+                        int mb = std::min(ib - i, MR);
+                        
                         // Initialize temporary buffer to zero
-                        for (int idx = 0; idx < MR * NR; idx++) {
-                            C_temp[idx] = 0.0;
-                        }
-                        
-                        // Copy A without transposing - MR rows x k columns block
-                        for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
-                            for (int ii = 0; ii < MR; ii++) {
-                                Apanel[ii + (l - kl3) * MR] = A[(i + ii) + l * lda];
+                        for (int jj = 0; jj < nb; jj++) {
+                            for (int ii = 0; ii < mb; ii++) {
+                                C_temp[ii + jj * MR] = 0.0;
                             }
                         }
                         
-                        // Copy B while transposing and multiply by alpha - NR rows x k columns block (after transpose)
-                        for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
-                            for (int jj = 0; jj < NR; jj++) {
-                                Bpanel[jj + (l - kl3) * NR] = alpha * B[l + (j + jj) * ldb];
-                            }
-                        }
-                        
-                        // Call micro kernel with proper leading dimensions
-                        noavx_micro_kernel(std::min(KC, k - kl3), Apanel, MR, Bpanel, NR, C_temp, MR);
+                        // Call micro kernel with transposed B panel
+                        avx2_micro_kernel_4x4_aligned(pb, &Apanel[i + 0 * ib], ib, &Bpanel[j], jb, C_temp, MR);
                         
                         // Add results to C (apply beta)
-                        for (int jj = 0; jj < NR; jj++) {
-                            for (int ii = 0; ii < MR; ii++) {
-                                if (kl3 == 0 && beta == 0.0) {
-                                    // beta = 0 case, first k block
-                                    C[(i + ii) + (j + jj) * ldc] = C_temp[ii + jj * MR];
-                                } else if (kl3 == 0) {
-                                    // First k block, apply beta
-                                    C[(i + ii) + (j + jj) * ldc] = beta * C[(i + ii) + (j + jj) * ldc] + C_temp[ii + jj * MR];
-                                } else {
-                                    // Not first k block, accumulate without beta
-                                    C[(i + ii) + (j + jj) * ldc] += C_temp[ii + jj * MR];
-                                }
+                        for (int jj = 0; jj < nb; jj++) {
+                            for (int ii = 0; ii < mb; ii++) {
+                                C[(ic + i + ii) + (jc + j + jj) * ldc] = (beta_block == 0.0) ? C_temp[ii + jj * MR] : beta_block * C[(ic + i + ii) + (jc + j + jj) * ldc] + C_temp[ii + jj * MR];
+
                             }
                         }
                     }
@@ -189,7 +219,7 @@ bool verify_results(int m, int n, int k, double alpha, const double *A, int lda,
     
     // Run both implementations
     dgemm_naive(m, n, k, alpha, A, lda, B, ldb, beta, C_naive.data(), ldc);
-    dgemm_noavx_kernel_nn(m, n, k, alpha, A, lda, B, ldb, beta, C_opt.data(), ldc);
+    dgemm_avx_kernel_nn(m, n, k, alpha, A, lda, B, ldb, beta, C_opt.data(), ldc);
     
     // Compare results
     const double epsilon = 1e-10;  // Tolerance for floating-point comparison
@@ -245,7 +275,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Prepare output CSV file
-    std::ofstream csv_file("dgemm_benchmark_noavx_block_kernel_results.csv");
+    std::ofstream csv_file("dgemm_benchmark_avx_block_kernel_results.csv");
     
     if (!csv_file.is_open()) {
         std::cerr << "Error: Could not open output file." << std::endl;
@@ -319,7 +349,7 @@ int main(int argc, char *argv[]) {
         for (int trial = 0; trial < num_trials; ++trial) {
             std::vector<double> C_test = C;
             double elapsed = benchmark([&]() {
-                dgemm_noavx_kernel_nn(m, n, k, alpha, A.data(), m, B.data(), k, beta, C_test.data(), m);
+                dgemm_avx_kernel_nn(m, n, k, alpha, A.data(), m, B.data(), k, beta, C_test.data(), m);
             });
             double flops = flop_count / elapsed / 1.0e9; // GFLOPS
             
@@ -337,7 +367,7 @@ int main(int argc, char *argv[]) {
     }
 
     csv_file.close();
-    std::cout << "Benchmark complete. Results saved to dgemm_benchmark_noavx_block_kernel_results.csv" << std::endl;
+    std::cout << "Benchmark complete. Results saved to dgemm_benchmark_avx_block_kernel_results.csv" << std::endl;
 
     return 0;
 }
