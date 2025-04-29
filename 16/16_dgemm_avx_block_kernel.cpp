@@ -7,6 +7,7 @@
 #include <fstream>
 #include <string>
 #include <set>
+#include <immintrin.h> // For AVX2 intrinsics
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -28,24 +29,13 @@
     #define ALIGN(x)
 #endif
 
-ALIGN(CACHELINE) static double Apanel[KC * MC]; // Transposed, so KCxMC
-ALIGN(CACHELINE) static double Bpanel[KC * NC];
+ALIGN(CACHELINE) static double Apanel[MC * KC];
+ALIGN(CACHELINE) static double Bpanel[KC * NC]; // B panel with transpose orientation
 ALIGN(CACHELINE) static double C_temp[MC * NC];
 
-#include <immintrin.h>
-
-/**
- * AVX2 micro-kernel for 4x4 matrix multiplication with aligned memory access
- * Computes C += A * B where:
- * - A is a 4xk matrix
- * - B is a kx4 matrix
- * - C is a 4x4 matrix
- **/
-inline void avx2_micro_kernel_4x4_aligned(int k,
-                                          const double * __restrict A, int lda,
-                                          const double * __restrict B, int ldb,
-                                          double * __restrict C, int ldc)
-{
+// 4x4 micro kernel (using AVX2) - B transposed version
+void avx2_micro_kernel_4x4_aligned(int k, const double *A, int lda,
+                         const double *B, int ldb, double *C, int ldc) {
     // Initialize four 256-bit accumulator registers to zero (each holds 4 doubles)
     __m256d c0 = _mm256_setzero_pd();  // For column 0 of C
     __m256d c1 = _mm256_setzero_pd();  // For column 1 of C
@@ -54,34 +44,35 @@ inline void avx2_micro_kernel_4x4_aligned(int k,
     
     // Loop over the common dimension k
     for (int l = 0; l < k; ++l) {
-        /* Load 4 elements from A into a single vector (column-major layout) */
-        __m256d a = _mm256_set_pd(A[l + 3*lda],
-                                  A[l + 2*lda],
-                                  A[l + 1*lda],
-                                  A[l + 0*lda]);   // Equivalent to gather operation
+        // Load 4 elements from A (non-transposed) - these are 4 consecutive rows from same column
+        __m256d a = _mm256_set_pd(
+            A[3 + l * lda],  // A[3,l]
+            A[2 + l * lda],  // A[2,l]
+            A[1 + l * lda],  // A[1,l]
+            A[0 + l * lda]   // A[0,l]
+        );
         
-        /* Broadcast single elements from B into 4 vectors (each containing 4 copies) */
-        __m256d b0 = _mm256_broadcast_sd(B + l + 0*ldb);  // B[l,0] broadcast
-        __m256d b1 = _mm256_broadcast_sd(B + l + 1*ldb);  // B[l,1] broadcast
-        __m256d b2 = _mm256_broadcast_sd(B + l + 2*ldb);  // B[l,2] broadcast
-        __m256d b3 = _mm256_broadcast_sd(B + l + 3*ldb);  // B[l,3] broadcast
+        // Load individual elements from transposed B panel and broadcast them
+        __m256d b0 = _mm256_broadcast_sd(&B[0 + l * ldb]);  // B_transposed[0,l]
+        __m256d b1 = _mm256_broadcast_sd(&B[1 + l * ldb]);  // B_transposed[1,l]
+        __m256d b2 = _mm256_broadcast_sd(&B[2 + l * ldb]);  // B_transposed[2,l]
+        __m256d b3 = _mm256_broadcast_sd(&B[3 + l * ldb]);  // B_transposed[3,l]
         
-        /* Update accumulators with FMA (Fused Multiply-Add) */
+        // Update accumulators with FMA (Fused Multiply-Add)
         c0 = _mm256_fmadd_pd(a, b0, c0);  // c0 += a * b0
         c1 = _mm256_fmadd_pd(a, b1, c1);  // c1 += a * b1
         c2 = _mm256_fmadd_pd(a, b2, c2);  // c2 += a * b2
         c3 = _mm256_fmadd_pd(a, b3, c3);  // c3 += a * b3
     }
     
-    /* Store results back to memory with aligned store instructions */
-  _mm256_store_pd(C + 0*ldc, c0);   // Store c0 to C[0:3,0] (1st column of C)
-  _mm256_store_pd(C + 1*ldc, c1);   // Store c1 to C[0:3,1] (2nd column of C)
-  _mm256_store_pd(C + 2*ldc, c2);   // Store c2 to C[0:3,2] (3rd column of C)
-  _mm256_store_pd(C + 3*ldc, c3);   // Store c3 to C[0:3,3] (4th column of C)
+    // Store results back to C (must respect column-major layout)
+    _mm256_store_pd(&C[0 * ldc], c0);  // Store to C[0:3,0] (1st column of C)
+    _mm256_store_pd(&C[1 * ldc], c1);  // Store to C[0:3,1] (2nd column of C)
+    _mm256_store_pd(&C[2 * ldc], c2);  // Store to C[0:3,2] (3rd column of C)
+    _mm256_store_pd(&C[3 * ldc], c3);  // Store to C[0:3,3] (4th column of C)
 }
 
-
-// DGEMM implementation with MR x NR micro kernel (NN version) - for multiples of MR/NR only, with buffer copying (A transposed version)
+// DGEMM implementation using 4x4 micro kernel with transposed B panel, using L3 cache blocking
 void dgemm_avx_kernel_nn(int m, int n, int k, double alpha, 
                           const double * __restrict A, int lda,
                           const double * __restrict B, int ldb, 
@@ -122,29 +113,29 @@ void dgemm_avx_kernel_nn(int m, int n, int k, double alpha,
         for (int il3 = 0; il3 < m; il3 += MC) {
             for (int kl3 = 0; kl3 < k; kl3 += KC) {
                 // Process by blocks (MR x NR blocks)
-		for (int j = jl3; j < std::min(jl3 + NC, n); j += NR) {
-		    for (int i = il3; i < std::min(il3 + MC, m); i += MR) {
+                for (int j = jl3; j < std::min(jl3 + NC, n); j += NR) {
+                    for (int i = il3; i < std::min(il3 + MC, m); i += MR) {
                         // Initialize temporary buffer to zero
                         for (int idx = 0; idx < MR * NR; idx++) {
                             C_temp[idx] = 0.0;
                         }
                         
-                        // Copy A while transposing - k rows x MR columns block (after transpose)
-                        for (int ii = 0; ii < MR; ii++) {
-			    for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
-                                Apanel[(l - kl3) + ii * KC] = A[(i + ii) + l * lda];
+                        // Copy A without transposing - MR rows x k columns block
+                        for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
+                            for (int ii = 0; ii < MR; ii++) {
+                                Apanel[ii + (l - kl3) * MR] = A[(i + ii) + l * lda];
                             }
                         }
                         
-                        // Copy B and multiply by alpha - k rows x NR columns block
-                        for (int jj = 0; jj < NR; jj++) {
-			    for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
-                                Bpanel[(l - kl3) + jj * KC] = alpha * B[l + (j + jj) * ldb];
+                        // Copy B while transposing and multiply by alpha - NR rows x k columns block (after transpose)
+                        for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
+                            for (int jj = 0; jj < NR; jj++) {
+                                Bpanel[jj + (l - kl3) * NR] = alpha * B[l + (j + jj) * ldb];
                             }
                         }
                         
-                        // Call micro kernel - using Apanel, Bpanel
-			avx2_micro_kernel_4x4_aligned(std::min(KC, k - kl3), Apanel, KC, Bpanel, KC, C_temp, MR);
+                        // Call micro kernel with proper leading dimensions
+                        avx2_micro_kernel_4x4_aligned(std::min(KC, k - kl3), Apanel, MR, Bpanel, NR, C_temp, MR);
                         
                         // Add results to C (apply beta)
                         for (int jj = 0; jj < NR; jj++) {
@@ -284,7 +275,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Sizes that are multiples of 8 (128 to 1024)
-    for (int size = 128; size <= 3500; size += 8) {
+    for (int size = 128; size <= 1500; size += 8) {
         size_set.insert(size);
     }
 
