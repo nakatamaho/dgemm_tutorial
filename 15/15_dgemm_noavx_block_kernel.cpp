@@ -15,8 +15,8 @@
 // Define block sizes
 #define MR 4
 #define NR 4
-#define MC 256
-#define NC 256
+#define MC 240
+#define NC 4096
 #define KC 256
 
 #define CACHELINE 64
@@ -103,48 +103,54 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
         return;
     }
 
-    // Process by L3 cache blocks
-    for (int jl3 = 0; jl3 < n; jl3 += NC) {
-        for (int il3 = 0; il3 < m; il3 += MC) {
-            for (int kl3 = 0; kl3 < k; kl3 += KC) {
-                // Process by blocks (MR x NR blocks)
-                for (int j = jl3; j < std::min(jl3 + NC, n); j += NR) {
-                    for (int i = il3; i < std::min(il3 + MC, m); i += MR) {
+    // Process by blocks (MC x NC blocks)
+    for (int jc = 0; jc < n; jc += NC) {
+        int jb = std::min(n - jc, NC);
+        
+        // Copy B panel and apply alpha at this level
+        for (int pc = 0; pc < k; pc += KC) {
+            int pb = std::min(k - pc, KC);
+            
+            // Create B panel (k×NC) with transposition for better cache utilization
+            for (int jp = 0; jp < jb; jp++) {
+                for (int l = 0; l < pb; l++) {
+                    Bpanel[jp + l * jb] = alpha * B[(pc + l) + (jc + jp) * ldb];
+                }
+            }
+            const double beta_block = (pc == 0) ? beta : 1.0;
+
+            // Process A panel (MC×k)
+            for (int ic = 0; ic < m; ic += MC) {
+                int ib = std::min(m - ic, MC);
+
+                // Create A panel
+                for (int l = 0; l < pb; l++) {
+                    for (int ip = 0; ip < ib; ip++) {
+                        Apanel[ip + l * ib] = A[(ic + ip) + (pc + l) * lda];
+                    }
+                }
+
+                // Process by panels (MR x NR panels)
+                for (int j = 0; j < jb; j += NR) {
+                    int nb = std::min(jb - j, NR);
+                    
+                    for (int i = 0; i < ib; i += MR) {
+                        int mb = std::min(ib - i, MR);
+                        
                         // Initialize temporary buffer to zero
-                        for (int idx = 0; idx < MR * NR; idx++) {
-                            C_temp[idx] = 0.0;
-                        }
-                        
-                        // Copy A without transposing - MR rows x k columns block
-                        for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
-                            for (int ii = 0; ii < MR; ii++) {
-                                Apanel[ii + (l - kl3) * MR] = A[(i + ii) + l * lda];
+                        for (int jj = 0; jj < nb; jj++) {
+                            for (int ii = 0; ii < mb; ii++) {
+                                C_temp[ii + jj * MR] = 0.0;
                             }
                         }
                         
-                        // Copy B while transposing and multiply by alpha - NR rows x k columns block (after transpose)
-                        for (int l = kl3; l < std::min(kl3 + KC, k); l++) {
-                            for (int jj = 0; jj < NR; jj++) {
-                                Bpanel[jj + (l - kl3) * NR] = alpha * B[l + (j + jj) * ldb];
-                            }
-                        }
-                        
-                        // Call micro kernel with proper leading dimensions
-                        noavx_micro_kernel(std::min(KC, k - kl3), Apanel, MR, Bpanel, NR, C_temp, MR);
+                        // Call micro kernel with transposed B panel
+                        noavx_micro_kernel(pb, &Apanel[i + 0 * ib], ib, &Bpanel[j], jb, C_temp, MR);
                         
                         // Add results to C (apply beta)
-                        for (int jj = 0; jj < NR; jj++) {
-                            for (int ii = 0; ii < MR; ii++) {
-                                if (kl3 == 0 && beta == 0.0) {
-                                    // beta = 0 case, first k block
-                                    C[(i + ii) + (j + jj) * ldc] = C_temp[ii + jj * MR];
-                                } else if (kl3 == 0) {
-                                    // First k block, apply beta
-                                    C[(i + ii) + (j + jj) * ldc] = beta * C[(i + ii) + (j + jj) * ldc] + C_temp[ii + jj * MR];
-                                } else {
-                                    // Not first k block, accumulate without beta
-                                    C[(i + ii) + (j + jj) * ldc] += C_temp[ii + jj * MR];
-                                }
+                        for (int jj = 0; jj < nb; jj++) {
+                            for (int ii = 0; ii < mb; ii++) {
+                                C[(ic + i + ii) + (jc + j + jj) * ldc] = (beta_block == 0.0) ? C_temp[ii + jj * MR] : beta_block * C[(ic + i + ii) + (jc + j + jj) * ldc] + C_temp[ii + jj * MR];
                             }
                         }
                     }
