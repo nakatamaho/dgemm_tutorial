@@ -34,37 +34,42 @@ ALIGN(CACHELINE) static double Bpanel[KC * NC]; // B panel with transpose orient
 ALIGN(CACHELINE) static double C_temp[MC * NC];
 
 // 4x4 micro kernel (using AVX2) - B transposed version
-void avx2_micro_kernel_4x4_aligned(int k, const double *A, int lda,
-                         const double *B, int ldb, double *C, int ldc) {
-    // Initialize four 256-bit accumulator registers to zero (each holds 4 doubles)
-    __m256d c0 = _mm256_setzero_pd();  // For column 0 of C
-    __m256d c1 = _mm256_setzero_pd();  // For column 1 of C
-    __m256d c2 = _mm256_setzero_pd();  // For column 2 of C
-    __m256d c3 = _mm256_setzero_pd();  // For column 3 of C
-    
-    // Loop over the common dimension k
+void avx2_micro_kernel_4x4_aligned(int k,
+                                   const double * __restrict A, int lda,
+                                   const double * __restrict B, int ldb,
+                                   double       * __restrict C, int ldc)
+{
+    // Four 256-bit accumulators, one per column of C
+    __m256d c0 = _mm256_setzero_pd();   // Column 0
+    __m256d c1 = _mm256_setzero_pd();   // Column 1
+    __m256d c2 = _mm256_setzero_pd();   // Column 2
+    __m256d c3 = _mm256_setzero_pd();   // Column 3
+
     for (int l = 0; l < k; ++l) {
-        // Load 4 elements from A (non-transposed) - these are 4 consecutive rows from same column
-        __m256d a = _mm256_loadu_pd(&A[0 + l * lda]);
-        
-        // Load individual elements from transposed B panel and broadcast them
-        __m256d b0 = _mm256_broadcast_sd(&B[0 + l * ldb]);  // B_transposed[0,l]
-        __m256d b1 = _mm256_broadcast_sd(&B[1 + l * ldb]);  // B_transposed[1,l]
-        __m256d b2 = _mm256_broadcast_sd(&B[2 + l * ldb]);  // B_transposed[2,l]
-        __m256d b3 = _mm256_broadcast_sd(&B[3 + l * ldb]);  // B_transposed[3,l]
-        
-        // Update accumulators with FMA (Fused Multiply-Add)
-        c0 = _mm256_fmadd_pd(a, b0, c0);  // c0 += a * b0
-        c1 = _mm256_fmadd_pd(a, b1, c1);  // c1 += a * b1
-        c2 = _mm256_fmadd_pd(a, b2, c2);  // c2 += a * b2
-        c3 = _mm256_fmadd_pd(a, b3, c3);  // c3 += a * b3
+        // Aligned load: 4 rows from column l of A
+        __m256d a = _mm256_load_pd(&A[l * lda]);
+
+        // Aligned load of the transposed row of B ( = original column of B )
+        __m256d brow = _mm256_load_pd(&B[l * ldb]);
+
+        // Broadcast each scalar of B across a 256-bit register
+        __m256d b0 = _mm256_permute4x64_pd(brow, 0b0000); // B[l,0]
+        __m256d b1 = _mm256_permute4x64_pd(brow, 0b0101); // B[l,1]
+        __m256d b2 = _mm256_permute4x64_pd(brow, 0b1010); // B[l,2]
+        __m256d b3 = _mm256_permute4x64_pd(brow, 0b1111); // B[l,3]
+
+        // FMA update
+        c0 = _mm256_fmadd_pd(a, b0, c0);
+        c1 = _mm256_fmadd_pd(a, b1, c1);
+        c2 = _mm256_fmadd_pd(a, b2, c2);
+        c3 = _mm256_fmadd_pd(a, b3, c3);
     }
-    
-    // Store results back to C (must respect column-major layout)
-    _mm256_store_pd(&C[0 * ldc], c0);  // Store to C[0:3,0] (1st column of C)
-    _mm256_store_pd(&C[1 * ldc], c1);  // Store to C[0:3,1] (2nd column of C)
-    _mm256_store_pd(&C[2 * ldc], c2);  // Store to C[0:3,2] (3rd column of C)
-    _mm256_store_pd(&C[3 * ldc], c3);  // Store to C[0:3,3] (4th column of C)
+
+    // Aligned stores back to C (column-major)
+    _mm256_store_pd(&C[0 * ldc], c0);
+    _mm256_store_pd(&C[1 * ldc], c1);
+    _mm256_store_pd(&C[2 * ldc], c2);
+    _mm256_store_pd(&C[3 * ldc], c3);
 }
 
 // DGEMM implementation using 4x4 micro kernel with transposed B panel, using L3 cache blocking
@@ -270,7 +275,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Sizes that are multiples of 8 (128 to 1024)
-    for (int size = 128; size <= 1500; size += 8) {
+    for (int size = 128; size <= 3500; size += 8) {
         size_set.insert(size);
     }
 
