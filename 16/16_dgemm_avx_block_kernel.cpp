@@ -16,9 +16,9 @@
 // Define block sizes
 #define MR 4
 #define NR 4
-#define MC 256
-#define NC 256
-#define KC 256
+#define MC 240
+#define NC 120
+#define KC 384
 
 #define CACHELINE 64
 #if defined(__GNUC__) || defined(__clang__)
@@ -45,12 +45,7 @@ void avx2_micro_kernel_4x4_aligned(int k, const double *A, int lda,
     // Loop over the common dimension k
     for (int l = 0; l < k; ++l) {
         // Load 4 elements from A (non-transposed) - these are 4 consecutive rows from same column
-        __m256d a = _mm256_set_pd(
-            A[3 + l * lda],  // A[3,l]
-            A[2 + l * lda],  // A[2,l]
-            A[1 + l * lda],  // A[1,l]
-            A[0 + l * lda]   // A[0,l]
-        );
+        __m256d a = _mm256_loadu_pd(&A[0 + l * lda]);
         
         // Load individual elements from transposed B panel and broadcast them
         __m256d b0 = _mm256_broadcast_sd(&B[0 + l * ldb]);  // B_transposed[0,l]
