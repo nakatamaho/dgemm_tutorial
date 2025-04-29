@@ -69,7 +69,7 @@ void noavx_micro_kernel(int k, const double *A, int lda,
     C[3 + 0 * ldc] = c30; C[3 + 1 * ldc] = c31; C[3 + 2 * ldc] = c32; C[3 + 3 * ldc] = c33;
 }
 
-// DGEMM implementation with MR x NR micro kernel (NN version) - for multiples of MR/NR only, with buffer copying (B transposed version)
+// DGEMM implementation using 4x4 micro kernel with transposed B panel, using L3 cache blocking
 void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, int lda,
                             const double *B, int ldb, double beta, double *C, int ldc) {
     // Handle simple cases
