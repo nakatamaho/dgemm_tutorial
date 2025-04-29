@@ -7,7 +7,6 @@
 #include <fstream>
 #include <string>
 #include <set>
-#include <immintrin.h> // For AVX2 intrinsics
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -33,50 +32,46 @@ ALIGN(CACHELINE) static double Apanel[MC * KC];
 ALIGN(CACHELINE) static double Bpanel[KC * NC]; // B panel with transpose orientation
 ALIGN(CACHELINE) static double C_temp[MC * NC];
 
-// 4x4 micro kernel (using AVX2) - B transposed version
-void avx2_micro_kernel_4x4_aligned(int k,
-                                   const double * __restrict A, int lda,
-                                   const double * __restrict B, int ldb,
-                                   double       * __restrict C, int ldc)
-{
-    // Four 256-bit accumulators, one per column of C
-    __m256d c0 = _mm256_setzero_pd();   // Column 0
-    __m256d c1 = _mm256_setzero_pd();   // Column 1
-    __m256d c2 = _mm256_setzero_pd();   // Column 2
-    __m256d c3 = _mm256_setzero_pd();   // Column 3
-
-    for (int l = 0; l < k; ++l) {
-        // Aligned load: 4 rows from column l of A
-        __m256d a = _mm256_load_pd(&A[l * lda]);
-
-        // Aligned load of the transposed row of B ( = original column of B )
-        __m256d brow = _mm256_load_pd(&B[l * ldb]);
-
-        // Broadcast each scalar of B across a 256-bit register
-        __m256d b0 = _mm256_permute4x64_pd(brow, 0b0000); // B[l,0]
-        __m256d b1 = _mm256_permute4x64_pd(brow, 0b0101); // B[l,1]
-        __m256d b2 = _mm256_permute4x64_pd(brow, 0b1010); // B[l,2]
-        __m256d b3 = _mm256_permute4x64_pd(brow, 0b1111); // B[l,3]
-
-        // FMA update
-        c0 = _mm256_fmadd_pd(a, b0, c0);
-        c1 = _mm256_fmadd_pd(a, b1, c1);
-        c2 = _mm256_fmadd_pd(a, b2, c2);
-        c3 = _mm256_fmadd_pd(a, b3, c3);
+// 4x4 micro kernel (no AVX) - B transposed version
+void noavx_micro_kernel(int k, const double *A, int lda,
+                         const double *B, int ldb, double *C, int ldc) {
+    // Accumulate results in temporary variables
+    double c00 = 0.0, c01 = 0.0, c02 = 0.0, c03 = 0.0;
+    double c10 = 0.0, c11 = 0.0, c12 = 0.0, c13 = 0.0;
+    double c20 = 0.0, c21 = 0.0, c22 = 0.0, c23 = 0.0;
+    double c30 = 0.0, c31 = 0.0, c32 = 0.0, c33 = 0.0;
+    
+    // Compute matrix multiplication along k dimension
+    for (int l = 0; l < k; l++) {
+        // Load elements from A (normal access pattern)
+        double a0 = A[0 + l * lda];
+        double a1 = A[1 + l * lda];
+        double a2 = A[2 + l * lda];
+        double a3 = A[3 + l * lda];
+        
+        // Load elements from B (transposed access pattern)
+        double b0 = B[0 + l * ldb];
+        double b1 = B[1 + l * ldb];
+        double b2 = B[2 + l * ldb];
+        double b3 = B[3 + l * ldb];
+        
+        // Compute matrix multiplication
+        c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
+        c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
+        c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
+        c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
     }
-
-    // Aligned stores back to C (column-major)
-    _mm256_store_pd(&C[0 * ldc], c0);
-    _mm256_store_pd(&C[1 * ldc], c1);
-    _mm256_store_pd(&C[2 * ldc], c2);
-    _mm256_store_pd(&C[3 * ldc], c3);
+    
+    // Store results to C
+    C[0 + 0 * ldc] = c00; C[0 + 1 * ldc] = c01; C[0 + 2 * ldc] = c02; C[0 + 3 * ldc] = c03;
+    C[1 + 0 * ldc] = c10; C[1 + 1 * ldc] = c11; C[1 + 2 * ldc] = c12; C[1 + 3 * ldc] = c13;
+    C[2 + 0 * ldc] = c20; C[2 + 1 * ldc] = c21; C[2 + 2 * ldc] = c22; C[2 + 3 * ldc] = c23;
+    C[3 + 0 * ldc] = c30; C[3 + 1 * ldc] = c31; C[3 + 2 * ldc] = c32; C[3 + 3 * ldc] = c33;
 }
 
 // DGEMM implementation using 4x4 micro kernel with transposed B panel, using L3 cache blocking
-void dgemm_avx_kernel_nn(int m, int n, int k, double alpha, 
-                          const double * __restrict A, int lda,
-                          const double * __restrict B, int ldb, 
-			  double beta, double * __restrict C, int ldc) {
+void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, int lda,
+                            const double *B, int ldb, double beta, double *C, int ldc) {
     // Handle simple cases
     if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
         return;  // Nothing to do
@@ -135,7 +130,7 @@ void dgemm_avx_kernel_nn(int m, int n, int k, double alpha,
                         }
                         
                         // Call micro kernel with proper leading dimensions
-                        avx2_micro_kernel_4x4_aligned(std::min(KC, k - kl3), Apanel, MR, Bpanel, NR, C_temp, MR);
+                        noavx_micro_kernel(std::min(KC, k - kl3), Apanel, MR, Bpanel, NR, C_temp, MR);
                         
                         // Add results to C (apply beta)
                         for (int jj = 0; jj < NR; jj++) {
@@ -194,7 +189,7 @@ bool verify_results(int m, int n, int k, double alpha, const double *A, int lda,
     
     // Run both implementations
     dgemm_naive(m, n, k, alpha, A, lda, B, ldb, beta, C_naive.data(), ldc);
-    dgemm_avx_kernel_nn(m, n, k, alpha, A, lda, B, ldb, beta, C_opt.data(), ldc);
+    dgemm_noavx_kernel_nn(m, n, k, alpha, A, lda, B, ldb, beta, C_opt.data(), ldc);
     
     // Compare results
     const double epsilon = 1e-10;  // Tolerance for floating-point comparison
@@ -250,7 +245,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Prepare output CSV file
-    std::ofstream csv_file("dgemm_benchmark_avx_block_kernel_results.csv");
+    std::ofstream csv_file("dgemm_benchmark_noavx_block_kernel_results.csv");
     
     if (!csv_file.is_open()) {
         std::cerr << "Error: Could not open output file." << std::endl;
@@ -324,7 +319,7 @@ int main(int argc, char *argv[]) {
         for (int trial = 0; trial < num_trials; ++trial) {
             std::vector<double> C_test = C;
             double elapsed = benchmark([&]() {
-                dgemm_avx_kernel_nn(m, n, k, alpha, A.data(), m, B.data(), k, beta, C_test.data(), m);
+                dgemm_noavx_kernel_nn(m, n, k, alpha, A.data(), m, B.data(), k, beta, C_test.data(), m);
             });
             double flops = flop_count / elapsed / 1.0e9; // GFLOPS
             
@@ -342,7 +337,7 @@ int main(int argc, char *argv[]) {
     }
 
     csv_file.close();
-    std::cout << "Benchmark complete. Results saved to dgemm_benchmark_avx_block_kernel_results.csv" << std::endl;
+    std::cout << "Benchmark complete. Results saved to dgemm_benchmark_noavx_block_kernel_results.csv" << std::endl;
 
     return 0;
 }
