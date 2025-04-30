@@ -15,9 +15,7 @@
 // Define block sizes
 #define MR 4
 #define NR 4
-#define MC 256
-#define NC 256
-#define KC 256
+#define KC 4120
 
 #define CACHELINE 64
 #if defined(__GNUC__) || defined(__clang__)
@@ -28,50 +26,50 @@
     #define ALIGN(x)
 #endif
 
-ALIGN(CACHELINE) static double Apanel[MC * KC];
-ALIGN(CACHELINE) static double Bpanel[KC * NC];
-ALIGN(CACHELINE) static double C_temp[MC * NC];
+ALIGN(CACHELINE) static double Apanel[MR * KC];
+ALIGN(CACHELINE) static double Bpanel[KC * NR];
 
 // 4x4 micro kernel (no AVX)
 void noavx_micro_kernel(int k, const double *A, int lda,
                          const double *B, int ldb, double *C, int ldc) {
-    // Accumulate results in temporary variables
     double c00 = 0.0, c01 = 0.0, c02 = 0.0, c03 = 0.0;
     double c10 = 0.0, c11 = 0.0, c12 = 0.0, c13 = 0.0;
     double c20 = 0.0, c21 = 0.0, c22 = 0.0, c23 = 0.0;
     double c30 = 0.0, c31 = 0.0, c32 = 0.0, c33 = 0.0;
-    
-    // Compute matrix multiplication along k dimension
-    for (int l = 0; l < k; l++) {
-        // Load elements from A
+
+    for (int l = 0; l < k; ++l) {
         double a0 = A[0 + l * lda];
         double a1 = A[1 + l * lda];
         double a2 = A[2 + l * lda];
         double a3 = A[3 + l * lda];
-        
-        // Load elements from B
+
         double b0 = B[l + 0 * ldb];
         double b1 = B[l + 1 * ldb];
         double b2 = B[l + 2 * ldb];
         double b3 = B[l + 3 * ldb];
-        
+
         // Compute matrix multiplication
-        c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
-        c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
-        c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
-        c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
+        c00 += a0 * b0;  c01 += a0 * b1;  c02 += a0 * b2;  c03 += a0 * b3;
+        c10 += a1 * b0;  c11 += a1 * b1;  c12 += a1 * b2;  c13 += a1 * b3;
+        c20 += a2 * b0;  c21 += a2 * b1;  c22 += a2 * b2;  c23 += a2 * b3;
+        c30 += a3 * b0;  c31 += a3 * b1;  c32 += a3 * b2;  c33 += a3 * b3;
     }
-    
-    // Store results to C
-    C[0 + 0 * ldc] = c00; C[0 + 1 * ldc] = c01; C[0 + 2 * ldc] = c02; C[0 + 3 * ldc] = c03;
-    C[1 + 0 * ldc] = c10; C[1 + 1 * ldc] = c11; C[1 + 2 * ldc] = c12; C[1 + 3 * ldc] = c13;
-    C[2 + 0 * ldc] = c20; C[2 + 1 * ldc] = c21; C[2 + 2 * ldc] = c22; C[2 + 3 * ldc] = c23;
-    C[3 + 0 * ldc] = c30; C[3 + 1 * ldc] = c31; C[3 + 2 * ldc] = c32; C[3 + 3 * ldc] = c33;
+
+    // Add into C instead of overwriting
+    C[0 + 0 * ldc] += c00;  C[0 + 1 * ldc] += c01;  C[0 + 2 * ldc] += c02;  C[0 + 3 * ldc] += c03;
+    C[1 + 0 * ldc] += c10;  C[1 + 1 * ldc] += c11;  C[1 + 2 * ldc] += c12;  C[1 + 3 * ldc] += c13;
+    C[2 + 0 * ldc] += c20;  C[2 + 1 * ldc] += c21;  C[2 + 2 * ldc] += c22;  C[2 + 3 * ldc] += c23;
+    C[3 + 0 * ldc] += c30;  C[3 + 1 * ldc] += c31;  C[3 + 2 * ldc] += c32;  C[3 + 3 * ldc] += c33;
 }
 
 // DGEMM implementation using 4x4 micro kernel (NN version) - for multiples of MR/NR only, with buffer copying
 void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, int lda,
                            const double *B, int ldb, double beta, double *C, int ldc) {
+    // runtime-safety guard for panel buffers
+    if (k > KC) {
+        std::cerr << "Error: k (" << k << ") exceeds KC (" << KC << ").\n";
+        return;
+    }
     // Handle simple cases
     if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
         return;  // Nothing to do
@@ -100,48 +98,40 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
         }
         return;
     }
-    
     // Process by panels (MR x NR panels)
     for (int j = 0; j < n; j += NR) {
         for (int i = 0; i < m; i += MR) {
-            // Initialize temporary buffer to zero
-            for (int idx = 0; idx < MR * NR; idx++) {
-                C_temp[idx] = 0.0;
+
+            // Pointer to current C block (column-major)
+            double *Cblk = &C[i + j * ldc];
+
+            // 1) Apply beta to the C block in place
+            if (beta == 0.0) {
+                for (int jj = 0; jj < NR; ++jj)
+                    for (int ii = 0; ii < MR; ++ii)
+                        Cblk[ii + jj * ldc] = 0.0;
+            } else if (beta != 1.0) {
+                for (int jj = 0; jj < NR; ++jj)
+                    for (int ii = 0; ii < MR; ++ii)
+                        Cblk[ii + jj * ldc] *= beta;
             }
-            
-            // Pack A panel (column-major)
-            for (int l = 0; l < k; l++) {
-                for (int ii = 0; ii < MR; ii++) {
+
+            // 2) Pack the A panel (MR × k, column-major)
+            for (int l = 0; l < k; ++l)
+                for (int ii = 0; ii < MR; ++ii)
                     Apanel[ii + l * MR] = A[(i + ii) + l * lda];
-                }
-            }
-            
-            // Pack B panel (column-major, no transpose)
-            for (int l = 0; l < k; l++) {
-                for (int jj = 0; jj < NR; jj++) {
-                    Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
-                }
-            }
-            
-            // Call micro kernel
-            noavx_micro_kernel(k, Apanel, MR, Bpanel, k, C_temp, MR);
-            
-            // Add results to C (apply beta)
-            for (int jj = 0; jj < NR; jj++) {
-                for (int ii = 0; ii < MR; ii++) {
-                    if (beta == 0.0) {
-                        // beta = 0 case
-                        C[(i + ii) + (j + jj) * ldc] = C_temp[ii + jj * MR];
-                    } else {
-                        // beta * C + C_temp
-                        C[(i + ii) + (j + jj) * ldc] = beta * C[(i + ii) + (j + jj) * ldc] + C_temp[ii + jj * MR];
-                    }
-                }
-            }
+
+            // 3) Pack the B panel (k × NR, column-major) and scale by alpha
+            for (int l = 0; l < k; ++l)
+                for (int jj = 0; jj < NR; ++jj)
+                    Bpanel[l + jj * k] = alpha * B[l + (j+jj) * ldb];
+
+            // 4) Accumulate:  Cblk += Apanel · Bpanel
+            //    The micro kernel is written to add into C directly
+            noavx_micro_kernel(k, Apanel, MR, Bpanel, k, Cblk, ldc);
         }
     }
 }
-
 
 // Naive DGEMM implementation for verification
 void dgemm_naive(int m, int n, int k, double alpha, const double *A, int lda,

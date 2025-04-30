@@ -12,25 +12,21 @@
 #include <omp.h>
 #endif
 
-// Define block sizes
 #define MR 4
 #define NR 4
-#define MC 256
-#define NC 256
-#define KC 256
-
+#define KC 4096                 // max k handled by the static panels
 #define CACHELINE 64
+
 #if defined(__GNUC__) || defined(__clang__)
-    #define ALIGN(x) __attribute__((aligned(x)))
+#   define ALIGN(x) __attribute__((aligned(x)))
 #elif defined(_MSC_VER)
-    #define ALIGN(x) __declspec(align(x))
+#   define ALIGN(x) __declspec(align(x))
 #else
-    #define ALIGN(x)
+#   define ALIGN(x)
 #endif
 
-ALIGN(CACHELINE) static double Apanel[MC * KC];
-ALIGN(CACHELINE) static double Bpanel[KC * NC]; // B panel with transpose orientation
-ALIGN(CACHELINE) static double C_temp[MC * NC];
+ALIGN(CACHELINE) static double Apanel[MR * KC];
+ALIGN(CACHELINE) static double Bpanel[KC * NR];
 
 // 4x4 micro kernel (no AVX) - B transposed version
 void noavx_micro_kernel(int k, const double *A, int lda,
@@ -63,15 +59,20 @@ void noavx_micro_kernel(int k, const double *A, int lda,
     }
     
     // Store results to C
-    C[0 + 0 * ldc] = c00; C[0 + 1 * ldc] = c01; C[0 + 2 * ldc] = c02; C[0 + 3 * ldc] = c03;
-    C[1 + 0 * ldc] = c10; C[1 + 1 * ldc] = c11; C[1 + 2 * ldc] = c12; C[1 + 3 * ldc] = c13;
-    C[2 + 0 * ldc] = c20; C[2 + 1 * ldc] = c21; C[2 + 2 * ldc] = c22; C[2 + 3 * ldc] = c23;
-    C[3 + 0 * ldc] = c30; C[3 + 1 * ldc] = c31; C[3 + 2 * ldc] = c32; C[3 + 3 * ldc] = c33;
+    C[0 + 0 * ldc] += c00; C[0 + 1 * ldc] += c01; C[0 + 2 * ldc] += c02; C[0 + 3 * ldc] += c03;
+    C[1 + 0 * ldc] += c10; C[1 + 1 * ldc] += c11; C[1 + 2 * ldc] += c12; C[1 + 3 * ldc] += c13;
+    C[2 + 0 * ldc] += c20; C[2 + 1 * ldc] += c21; C[2 + 2 * ldc] += c22; C[2 + 3 * ldc] += c23;
+    C[3 + 0 * ldc] += c30; C[3 + 1 * ldc] += c31; C[3 + 2 * ldc] += c32; C[3 + 3 * ldc] += c33;
 }
 
 // DGEMM implementation using 4x4 micro kernel with transposed B panel
 void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, int lda,
                             const double *B, int ldb, double beta, double *C, int ldc) {
+    // Panel-size guard
+    if (k > KC) {
+        std::cerr << "Error: k (" << k << ") exceeds KC (" << KC << ").\n";
+        return;
+    }
     // Handle simple cases
     if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
         return;  // Nothing to do
@@ -103,59 +104,37 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
         return;
     }
 
-    // Process by panels (MR x NR panels)
     for (int j = 0; j < n; j += NR) {
-        int nr = std::min(NR, n - j);
-        
         for (int i = 0; i < m; i += MR) {
-            int mr = std::min(MR, m - i);
-            
-            // Initialize temporary buffer to zero
-            for (int jj = 0; jj < NR; jj++) {
-                for (int ii = 0; ii < MR; ii++) {
-                    C_temp[ii + jj * MR] = 0.0;
-                }
+
+            /* C block pointer */
+            double *Cblk = &C[i + j*ldc];
+
+            /* apply beta once */
+            if (beta == 0.0) {
+                for (int jj=0; jj<NR; ++jj)
+                    for (int ii=0; ii<MR; ++ii)
+                        Cblk[ii + jj*ldc] = 0.0;
+            } else if (beta != 1.0) {
+                for (int jj=0; jj<NR; ++jj)
+                    for (int ii=0; ii<MR; ++ii)
+                        Cblk[ii + jj*ldc] *= beta;
             }
-            
-            // Copy A panel - keep original orientation for micro-kernel
-            for (int l = 0; l < k; l++) {
-                for (int ii = 0; ii < mr; ii++) {
-                    Apanel[ii + l * MR] = A[(i + ii) + l * lda];
-                }
-                // Zero padding for A
-                for (int ii = mr; ii < MR; ii++) {
-                    Apanel[ii + l * MR] = 0.0;
-                }
-            }
-            
-            // Copy B panel and transpose it for better cache utilization
-            for (int jj = 0; jj < nr; jj++) {
-                for (int l = 0; l < k; l++) {
-                    Bpanel[jj + l * NR] = alpha * B[l + (j + jj) * ldb];
-                }
-            }
-            // Zero padding for B
-            for (int jj = nr; jj < NR; jj++) {
-                for (int l = 0; l < k; l++) {
-                    Bpanel[jj + l * NR] = 0.0;
-                }
-            }
-            
-            // Call micro kernel
-            noavx_micro_kernel(k, Apanel, MR, Bpanel, NR, C_temp, MR);
-            
-            // Add results to C (apply beta)
-            for (int jj = 0; jj < nr; jj++) {
-                for (int ii = 0; ii < mr; ii++) {
-                    if (beta == 0.0) {
-                        // beta = 0 case
-                        C[(i + ii) + (j + jj) * ldc] = C_temp[ii + jj * MR];
-                    } else {
-                        // beta * C + C_temp
-                        C[(i + ii) + (j + jj) * ldc] = beta * C[(i + ii) + (j + jj) * ldc] + C_temp[ii + jj * MR];
-                    }
-                }
-            }
+
+            /* pack A (MR × k) */
+            for (int l=0; l<k; ++l)
+                for (int ii=0; ii<MR; ++ii)
+                    Apanel[ii + l*MR] = A[(i+ii) + l*lda];
+
+            /* pack Bᵗ (k × NR) and scale by α */
+            for (int l=0; l<k; ++l)
+                for (int jj=0; jj<NR; ++jj)
+                    Bpanel[jj + l* NR] = alpha * B[l + (j+jj)*ldb];
+
+            /* micro-kernel : Cblk += A·Bᵗ */
+            noavx_micro_kernel(k, Apanel, MR,
+                                  Bpanel, NR,
+                                  Cblk,  ldc);
         }
     }
 }
