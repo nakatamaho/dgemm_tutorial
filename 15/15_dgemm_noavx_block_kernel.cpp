@@ -33,36 +33,44 @@ ALIGN(CACHELINE) static double Bpanel[KC * NC]; // B panel with transpose orient
 ALIGN(CACHELINE) static double C_temp[MC * NC];
 
 // 4x4 micro kernel (no AVX) - B transposed version
-void noavx_micro_kernel(int k, const double *A, int lda,
-                         const double *B, int ldb, double *C, int ldc) {
-    // Accumulate results in temporary variables
-    double c00 = 0.0, c01 = 0.0, c02 = 0.0, c03 = 0.0;
-    double c10 = 0.0, c11 = 0.0, c12 = 0.0, c13 = 0.0;
-    double c20 = 0.0, c21 = 0.0, c22 = 0.0, c23 = 0.0;
-    double c30 = 0.0, c31 = 0.0, c32 = 0.0, c33 = 0.0;
-    
-    // Compute matrix multiplication along k dimension
-    for (int l = 0; l < k; l++) {
-        // Load elements from A (normal access pattern)
+static inline void noavx_micro_kernel(
+    int              k,
+    const double    *A, int lda,
+    const double    *B, int ldb,
+    double          *C, int ldc)
+{
+    // Load existing C block
+    double c00 = C[0 + 0 * ldc]; double c01 = C[0 + 1 * ldc];
+    double c02 = C[0 + 2 * ldc]; double c03 = C[0 + 3 * ldc];
+    double c10 = C[1 + 0 * ldc]; double c11 = C[1 + 1 * ldc];
+    double c12 = C[1 + 2 * ldc]; double c13 = C[1 + 3 * ldc];
+    double c20 = C[2 + 0 * ldc]; double c21 = C[2 + 1 * ldc];
+    double c22 = C[2 + 2 * ldc]; double c23 = C[2 + 3 * ldc];
+    double c30 = C[3 + 0 * ldc]; double c31 = C[3 + 1 * ldc];
+    double c32 = C[3 + 2 * ldc]; double c33 = C[3 + 3 * ldc];
+
+    // Main multiply–accumulate loop
+    for (int l = 0; l < k; ++l) {
+        // A is stored normally (row‑major inside panel)
         double a0 = A[0 + l * lda];
         double a1 = A[1 + l * lda];
         double a2 = A[2 + l * lda];
         double a3 = A[3 + l * lda];
-        
-        // Load elements from B (transposed access pattern)
+
+        // B was packed transposed: columns become contiguous
         double b0 = B[0 + l * ldb];
         double b1 = B[1 + l * ldb];
         double b2 = B[2 + l * ldb];
         double b3 = B[3 + l * ldb];
-        
-        // Compute matrix multiplication
+
+        // FMA (without AVX)
         c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
         c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
         c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
         c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
     }
-    
-    // Store results to C
+
+    // Store the updated C block
     C[0 + 0 * ldc] = c00; C[0 + 1 * ldc] = c01; C[0 + 2 * ldc] = c02; C[0 + 3 * ldc] = c03;
     C[1 + 0 * ldc] = c10; C[1 + 1 * ldc] = c11; C[1 + 2 * ldc] = c12; C[1 + 3 * ldc] = c13;
     C[2 + 0 * ldc] = c20; C[2 + 1 * ldc] = c21; C[2 + 2 * ldc] = c22; C[2 + 3 * ldc] = c23;
@@ -74,109 +82,78 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha,
                           const double * __restrict A, int lda,
                           const double * __restrict B, int ldb, 
 			  double beta, double * __restrict C, int ldc) {
-    // Handle simple cases
-    if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
-        return;  // Nothing to do
-    }
-    
-    // Check for size multiples of MR/NR
+    if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) return;
+
+    // Require exact multiples of MR/NR (keeps edge handling simple)
     if (m % MR != 0 || n % NR != 0 || k % 4 != 0) {
-        std::cerr << "Error: Matrix dimensions must be multiples of MR/NR." << std::endl;
+        std::cerr << "Error: matrix dimensions must be multiples of MR/NR (4)." << std::endl;
         return;
     }
-    
-    // Handle alpha == 0 case
-    if (alpha == 0.0) {
-        if (beta == 0.0) {
-            // C = 0
-            for (int j = 0; j < n; j++) {
-                for (int i = 0; i < m; i++) {
-                    C[i + j * ldc] = 0.0;
-                }
-            }
-        } else {
-            // C = beta * C
-            for (int j = 0; j < n; j++) {
-                for (int i = 0; i < m; i++) {
-                    C[i + j * ldc] = beta * C[i + j * ldc];
-                }
-            }
-        }
-        return;
-    }
-    
-    // Process by blocks
+
+    // Main cache‑blocked loops (j – N, p – K, i – M)
     for (int j = 0; j < n; j += NC) {
         int nc = std::min(NC, n - j);
-        
+
         for (int p = 0; p < k; p += KC) {
-            int kc = std::min(KC, k - p);
-            
-            // Apply beta only on first k-block
-            const double beta_block = (p == 0) ? beta : 1.0;
-            
-            // Direct packing of B with alpha applied
+            int kc         = std::min(KC, k - p);
+            const bool first_k_block = (p == 0);
+
+            // -----------------------------------------------------------------
+            // Pack current kc×nc block of B, scaling by alpha during pack
+            // Layout: each NR‑sized column stripe becomes contiguous.
+            // -----------------------------------------------------------------
             for (int jr = 0; jr < nc; jr += NR) {
                 int nr = std::min(NR, nc - jr);
-                
-                for (int l = 0; l < kc; l++) {
-                    for (int jj = 0; jj < nr; jj++) {
+
+                for (int l = 0; l < kc; ++l) {
+                    for (int jj = 0; jj < nr; ++jj) {
                         Bpanel[jr * kc + l * NR + jj] = alpha * B[(p + l) + (j + jr + jj) * ldb];
                     }
-                    // Zero padding
-                    for (int jj = nr; jj < NR; jj++) {
+                    for (int jj = nr; jj < NR; ++jj) { // zero‑pad
                         Bpanel[jr * kc + l * NR + jj] = 0.0;
                     }
                 }
             }
-            
+
+            // -----------------------------------------------------------------
+            // Pack A and compute micro‑blocks
+            // -----------------------------------------------------------------
             for (int i = 0; i < m; i += MC) {
                 int mc = std::min(MC, m - i);
-                
-                // Pack A block
+
+                // Pack mc×kc slice of A (column‑major inside panel)
                 for (int ir = 0; ir < mc; ir += MR) {
-                    int mr = std::min(MR, mc - ir);
-                    
-                    for (int l = 0; l < kc; l++) {
-                        for (int ii = 0; ii < mr; ii++) {
+                    for (int l = 0; l < kc; ++l) {
+                        for (int ii = 0; ii < MR; ++ii) {
                             Apanel[ir * kc + l * MR + ii] = A[(i + ir + ii) + (p + l) * lda];
-                        }
-                        // Zero padding
-                        for (int ii = mr; ii < MR; ii++) {
-                            Apanel[ir * kc + l * MR + ii] = 0.0;
                         }
                     }
                 }
-                
+
+                // Compute blocks C(i:i+mc, j:j+nc)
                 for (int jr = 0; jr < nc; jr += NR) {
-                    int nr = std::min(NR, nc - jr);
-                    
                     for (int ir = 0; ir < mc; ir += MR) {
-                        int mr = std::min(MR, mc - ir);
-                        
-                        // Initialize C_temp to zero
-                        for (int jj = 0; jj < NR; jj++) {
-                            for (int ii = 0; ii < MR; ii++) {
-                                C_temp[ii + jj * MR] = 0.0;
+                        double *Cblock = &C[(i + ir) + (j + jr) * ldc];
+
+                        // Apply beta to C only once (first kc block)
+                        if (first_k_block) {
+                            if (beta == 0.0) {
+                                for (int jj = 0; jj < NR; ++jj)
+                                    for (int ii = 0; ii < MR; ++ii)
+                                        Cblock[ii + jj * ldc] = 0.0;
+                            } else if (beta != 1.0) {
+                                for (int jj = 0; jj < NR; ++jj)
+                                    for (int ii = 0; ii < MR; ++ii)
+                                        Cblock[ii + jj * ldc] *= beta;
                             }
                         }
-                        
-                        // Call micro-kernel
-                        noavx_micro_kernel(kc, 
-                                          &Apanel[ir * kc], MR, 
-                                          &Bpanel[jr * kc], NR, 
-                                          C_temp, MR);
-                        
-                        // Store results to C with proper beta scaling
-                        for (int jj = 0; jj < nr; jj++) {
-                            for (int ii = 0; ii < mr; ii++) {
-                                if (beta_block == 0.0) {
-                                    C[(i + ir + ii) + (j + jr + jj) * ldc] = C_temp[ii + jj * MR];
-                                } else {
-                                    C[(i + ir + ii) + (j + jr + jj) * ldc] = beta_block * C[(i + ir + ii) + (j + jr + jj) * ldc] + C_temp[ii + jj * MR];
-                                }
-                            }
-                        }
+
+                        // Accumulate alpha*A*B into C
+                        noavx_micro_kernel(
+                            kc,
+                            &Apanel[ir * kc], MR,
+                            &Bpanel[jr * kc], NR,
+                            Cblock, ldc);
                     }
                 }
             }

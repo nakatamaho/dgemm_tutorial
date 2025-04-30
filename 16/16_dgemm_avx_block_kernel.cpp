@@ -31,172 +31,123 @@
 
 ALIGN(CACHELINE) static double Apanel[MC * KC];
 ALIGN(CACHELINE) static double Bpanel[KC * NC]; // B panel with transpose orientation
-ALIGN(CACHELINE) static double C_temp[MC * NC];
 
 // 4x4 micro kernel (using AVX2) - B transposed version
 void avx2_micro_kernel_4x4_aligned(int k,
                                    const double * __restrict A, int lda,
                                    const double * __restrict B, int ldb,
                                    double       * __restrict C, int ldc) {
-    // Initialize AVX registers to accumulate results
-    __m256d c0 = _mm256_setzero_pd(); // For row 0 of C matrix (c00, c01, c02, c03)
-    __m256d c1 = _mm256_setzero_pd(); // For row 1 of C matrix (c10, c11, c12, c13)
-    __m256d c2 = _mm256_setzero_pd(); // For row 2 of C matrix (c20, c21, c22, c23)
-    __m256d c3 = _mm256_setzero_pd(); // For row 3 of C matrix (c30, c31, c32, c33)
-    
-    // Compute matrix multiplication along k dimension
-    for (int l = 0; l < k; l++) {
-        // Load elements from A and broadcast to all elements
-        __m256d a0 = _mm256_set1_pd(A[0 + l * lda]); // Broadcast a0 to all elements
-        __m256d a1 = _mm256_set1_pd(A[1 + l * lda]); // Broadcast a1 to all elements
-        __m256d a2 = _mm256_set1_pd(A[2 + l * lda]); // Broadcast a2 to all elements
-        __m256d a3 = _mm256_set1_pd(A[3 + l * lda]); // Broadcast a3 to all elements
-        
-        // Load 4 elements from B at once (transposed access pattern) with aligned load
-        __m256d b = _mm256_load_pd(&B[0 + l * ldb]);
-        
-        // Multiply and accumulate using FMA instructions
-        c0 = _mm256_fmadd_pd(a0, b, c0); // c0 += a0 * b
-        c1 = _mm256_fmadd_pd(a1, b, c1); // c1 += a1 * b
-        c2 = _mm256_fmadd_pd(a2, b, c2); // c2 += a2 * b
-        c3 = _mm256_fmadd_pd(a3, b, c3); // c3 += a3 * b
+    // Load existing C block into vector registers (row‑major view)
+    __m256d c0 = _mm256_set_pd(C[0 + 3 * ldc], C[0 + 2 * ldc],
+                               C[0 + 1 * ldc], C[0 + 0 * ldc]);
+    __m256d c1 = _mm256_set_pd(C[1 + 3 * ldc], C[1 + 2 * ldc],
+                               C[1 + 1 * ldc], C[1 + 0 * ldc]);
+    __m256d c2 = _mm256_set_pd(C[2 + 3 * ldc], C[2 + 2 * ldc],
+                               C[2 + 1 * ldc], C[2 + 0 * ldc]);
+    __m256d c3 = _mm256_set_pd(C[3 + 3 * ldc], C[3 + 2 * ldc],
+                               C[3 + 1 * ldc], C[3 + 0 * ldc]);
+
+    for (int l = 0; l < k; ++l) {
+        // Broadcast one column of A (4 rows)
+        __m256d a0 = _mm256_set1_pd(A[0 + l * lda]);
+        __m256d a1 = _mm256_set1_pd(A[1 + l * lda]);
+        __m256d a2 = _mm256_set1_pd(A[2 + l * lda]);
+        __m256d a3 = _mm256_set1_pd(A[3 + l * lda]);
+
+        // Load a transposed row of B (4 contiguous elements)
+        __m256d b  = _mm256_load_pd(&B[0 + l * ldb]);
+
+        // FMA accumulate
+        c0 = _mm256_fmadd_pd(a0, b, c0);
+        c1 = _mm256_fmadd_pd(a1, b, c1);
+        c2 = _mm256_fmadd_pd(a2, b, c2);
+        c3 = _mm256_fmadd_pd(a3, b, c3);
     }
-    
-    // Create temporary arrays for results (aligned to 64 bytes)
-    alignas(64) double c0_arr[4], c1_arr[4], c2_arr[4], c3_arr[4];
-    
-    // Store results from AVX registers to temporary arrays with aligned store
-    _mm256_store_pd(c0_arr, c0);
-    _mm256_store_pd(c1_arr, c1);
-    _mm256_store_pd(c2_arr, c2);
-    _mm256_store_pd(c3_arr, c3);
-    
-    // Store results to C matrix
-    // Row 0
-    C[0 + 0 * ldc] = c0_arr[0]; C[0 + 1 * ldc] = c0_arr[1]; 
-    C[0 + 2 * ldc] = c0_arr[2]; C[0 + 3 * ldc] = c0_arr[3];
-    
-    // Row 1
-    C[1 + 0 * ldc] = c1_arr[0]; C[1 + 1 * ldc] = c1_arr[1]; 
-    C[1 + 2 * ldc] = c1_arr[2]; C[1 + 3 * ldc] = c1_arr[3];
-    
-    // Row 2
-    C[2 + 0 * ldc] = c2_arr[0]; C[2 + 1 * ldc] = c2_arr[1]; 
-    C[2 + 2 * ldc] = c2_arr[2]; C[2 + 3 * ldc] = c2_arr[3];
-    
-    // Row 3
-    C[3 + 0 * ldc] = c3_arr[0]; C[3 + 1 * ldc] = c3_arr[1]; 
-    C[3 + 2 * ldc] = c3_arr[2]; C[3 + 3 * ldc] = c3_arr[3];
+
+    // Store back to C (scalar, avoids alignment issues)
+    alignas(64) double tmp[4];
+
+    _mm256_store_pd(tmp, c0);
+    C[0 + 0 * ldc] = tmp[0]; C[0 + 1 * ldc] = tmp[1];
+    C[0 + 2 * ldc] = tmp[2]; C[0 + 3 * ldc] = tmp[3];
+
+    _mm256_store_pd(tmp, c1);
+    C[1 + 0 * ldc] = tmp[0]; C[1 + 1 * ldc] = tmp[1];
+    C[1 + 2 * ldc] = tmp[2]; C[1 + 3 * ldc] = tmp[3];
+
+    _mm256_store_pd(tmp, c2);
+    C[2 + 0 * ldc] = tmp[0]; C[2 + 1 * ldc] = tmp[1];
+    C[2 + 2 * ldc] = tmp[2]; C[2 + 3 * ldc] = tmp[3];
+
+    _mm256_store_pd(tmp, c3);
+    C[3 + 0 * ldc] = tmp[0]; C[3 + 1 * ldc] = tmp[1];
+    C[3 + 2 * ldc] = tmp[2]; C[3 + 3 * ldc] = tmp[3];
 }
 
 // DGEMM implementation using 4x4 micro kernel with transposed B panel, using L3 cache blocking
 void dgemm_avx_kernel_nn(int m, int n, int k, double alpha, 
                           const double * __restrict A, int lda,
                           const double * __restrict B, int ldb, 
-			  double beta, double * __restrict C, int ldc) {
-    // Handle simple cases
-    if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
-        return;  // Nothing to do
-    }
-    
-    // Check for size multiples of MR/NR
+			  double beta, double * __restrict C, int ldc)
+{
+    if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) return;
     if (m % MR != 0 || n % NR != 0 || k % 4 != 0) {
-        std::cerr << "Error: Matrix dimensions must be multiples of MR/NR." << std::endl;
+        std::cerr << "Error: matrix dims must be multiples of 4." << std::endl;
         return;
     }
-    
-    // Handle alpha == 0 case
-    if (alpha == 0.0) {
-        if (beta == 0.0) {
-            // C = 0
-            for (int j = 0; j < n; j++) {
-                for (int i = 0; i < m; i++) {
-                    C[i + j * ldc] = 0.0;
-                }
-            }
-        } else {
-            // C = beta * C
-            for (int j = 0; j < n; j++) {
-                for (int i = 0; i < m; i++) {
-                    C[i + j * ldc] = beta * C[i + j * ldc];
-                }
-            }
-        }
-        return;
-    }
-    
-    // Process by blocks
+
     for (int j = 0; j < n; j += NC) {
         int nc = std::min(NC, n - j);
-        
+
         for (int p = 0; p < k; p += KC) {
-            int kc = std::min(KC, k - p);
-            
-            // Apply beta only on first k-block
-            const double beta_block = (p == 0) ? beta : 1.0;
-            
-            // Direct packing of B with alpha applied
+            int kc         = std::min(KC, k - p);
+            const bool first_k_block = (p == 0);
+
+            // Pack kc×nc block of B and scale by alpha
             for (int jr = 0; jr < nc; jr += NR) {
                 int nr = std::min(NR, nc - jr);
-                
-                for (int l = 0; l < kc; l++) {
-                    for (int jj = 0; jj < nr; jj++) {
+                for (int l = 0; l < kc; ++l) {
+                    for (int jj = 0; jj < nr; ++jj)
                         Bpanel[jr * kc + l * NR + jj] = alpha * B[(p + l) + (j + jr + jj) * ldb];
-                    }
-                    // Zero padding
-                    for (int jj = nr; jj < NR; jj++) {
+                    for (int jj = nr; jj < NR; ++jj)
                         Bpanel[jr * kc + l * NR + jj] = 0.0;
-                    }
                 }
             }
-            
+
             for (int i = 0; i < m; i += MC) {
                 int mc = std::min(MC, m - i);
-                
-                // Pack A block
+
+                // Pack mc×kc slice of A
                 for (int ir = 0; ir < mc; ir += MR) {
-                    int mr = std::min(MR, mc - ir);
-                    
-                    for (int l = 0; l < kc; l++) {
-                        for (int ii = 0; ii < mr; ii++) {
+                    for (int l = 0; l < kc; ++l)
+                        for (int ii = 0; ii < MR; ++ii)
                             Apanel[ir * kc + l * MR + ii] = A[(i + ir + ii) + (p + l) * lda];
-                        }
-                        // Zero padding
-                        for (int ii = mr; ii < MR; ii++) {
-                            Apanel[ir * kc + l * MR + ii] = 0.0;
-                        }
-                    }
                 }
-                
+
+                // Compute C blocks
                 for (int jr = 0; jr < nc; jr += NR) {
-                    int nr = std::min(NR, nc - jr);
-                    
                     for (int ir = 0; ir < mc; ir += MR) {
-                        int mr = std::min(MR, mc - ir);
-                        
-                        // Initialize C_temp to zero
-                        for (int jj = 0; jj < NR; jj++) {
-                            for (int ii = 0; ii < MR; ii++) {
-                                C_temp[ii + jj * MR] = 0.0;
+                        double *Cblk = &C[(i + ir) + (j + jr) * ldc];
+
+                        // Apply beta once per C block (only on first kc chunk)
+                        if (first_k_block) {
+                            if (beta == 0.0) {
+                                for (int jj = 0; jj < NR; ++jj)
+                                    for (int ii = 0; ii < MR; ++ii)
+                                        Cblk[ii + jj * ldc] = 0.0;
+                            } else if (beta != 1.0) {
+                                for (int jj = 0; jj < NR; ++jj)
+                                    for (int ii = 0; ii < MR; ++ii)
+                                        Cblk[ii + jj * ldc] *= beta;
                             }
                         }
-                        
-                        // Call micro-kernel
-                        avx2_micro_kernel_4x4_aligned(kc, 
-                                          &Apanel[ir * kc], MR, 
-                                          &Bpanel[jr * kc], NR, 
-                                          C_temp, MR);
-                        
-                        // Store results to C with proper beta scaling
-                        for (int jj = 0; jj < nr; jj++) {
-                            for (int ii = 0; ii < mr; ii++) {
-                                if (beta_block == 0.0) {
-                                    C[(i + ir + ii) + (j + jr + jj) * ldc] = C_temp[ii + jj * MR];
-                                } else {
-                                    C[(i + ir + ii) + (j + jr + jj) * ldc] = beta_block * C[(i + ir + ii) + (j + jr + jj) * ldc] + C_temp[ii + jj * MR];
-                                }
-                            }
-                        }
+
+                        // Call micro‑kernel (accumulates into Cblk)
+                        avx2_micro_kernel_4x4_aligned(
+                            kc,
+                            &Apanel[ir * kc], MR,
+                            &Bpanel[jr * kc], NR,
+                            Cblk, ldc);
                     }
                 }
             }
