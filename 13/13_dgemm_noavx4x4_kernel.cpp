@@ -12,40 +12,71 @@
 #endif
 
 // 4x4 マイクロカーネル (AVX2なし)
-void noavx_micro_kernel_4x4(int k, const double *A, int lda,
-                           const double *B, int ldb, double *C, int ldc) {
-    // 一時変数に計算結果を蓄積
-    double c00 = 0.0, c01 = 0.0, c02 = 0.0, c03 = 0.0;
-    double c10 = 0.0, c11 = 0.0, c12 = 0.0, c13 = 0.0;
-    double c20 = 0.0, c21 = 0.0, c22 = 0.0, c23 = 0.0;
-    double c30 = 0.0, c31 = 0.0, c32 = 0.0, c33 = 0.0;
-    
-    // k方向に行列積を計算
-    for (int l = 0; l < k; l++) {
-        // Aの要素をロード
+void noavx_micro_kernel_4x4(int k,
+                            const double *A, int lda,
+                            const double *B, int ldb,
+                            double *C, int ldc,
+                            double alpha, double beta)
+{
+    /* temporary registers that will finally hold
+       beta*C + alpha*Σ_l a(il)*b(lj)                                  */
+    double c00 = beta * C[0 + 0 * ldc];
+    double c01 = beta * C[0 + 1 * ldc];
+    double c02 = beta * C[0 + 2 * ldc];
+    double c03 = beta * C[0 + 3 * ldc];
+
+    double c10 = beta * C[1 + 0 * ldc];
+    double c11 = beta * C[1 + 1 * ldc];
+    double c12 = beta * C[1 + 2 * ldc];
+    double c13 = beta * C[1 + 3 * ldc];
+
+    double c20 = beta * C[2 + 0 * ldc];
+    double c21 = beta * C[2 + 1 * ldc];
+    double c22 = beta * C[2 + 2 * ldc];
+    double c23 = beta * C[2 + 3 * ldc];
+
+    double c30 = beta * C[3 + 0 * ldc];
+    double c31 = beta * C[3 + 1 * ldc];
+    double c32 = beta * C[3 + 2 * ldc];
+    double c33 = beta * C[3 + 3 * ldc];
+
+    for (int l = 0; l < k; ++l) {
         double a0 = A[0 + l * lda];
         double a1 = A[1 + l * lda];
         double a2 = A[2 + l * lda];
         double a3 = A[3 + l * lda];
-        
-        // Bの要素をロード
+
         double b0 = B[l + 0 * ldb];
         double b1 = B[l + 1 * ldb];
         double b2 = B[l + 2 * ldb];
         double b3 = B[l + 3 * ldb];
-        
-        // 行列積の計算
-        c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
-        c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
-        c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
-        c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
+
+        /* accumulate alpha*A*B directly */
+        c00 += alpha * a0 * b0;   c01 += alpha * a0 * b1;
+        c02 += alpha * a0 * b2;   c03 += alpha * a0 * b3;
+
+        c10 += alpha * a1 * b0;   c11 += alpha * a1 * b1;
+        c12 += alpha * a1 * b2;   c13 += alpha * a1 * b3;
+
+        c20 += alpha * a2 * b0;   c21 += alpha * a2 * b1;
+        c22 += alpha * a2 * b2;   c23 += alpha * a2 * b3;
+
+        c30 += alpha * a3 * b0;   c31 += alpha * a3 * b1;
+        c32 += alpha * a3 * b2;   c33 += alpha * a3 * b3;
     }
-    
-    // 結果をCに格納
-    C[0 + 0 * ldc] = c00; C[0 + 1 * ldc] = c01; C[0 + 2 * ldc] = c02; C[0 + 3 * ldc] = c03;
-    C[1 + 0 * ldc] = c10; C[1 + 1 * ldc] = c11; C[1 + 2 * ldc] = c12; C[1 + 3 * ldc] = c13;
-    C[2 + 0 * ldc] = c20; C[2 + 1 * ldc] = c21; C[2 + 2 * ldc] = c22; C[2 + 3 * ldc] = c23;
-    C[3 + 0 * ldc] = c30; C[3 + 1 * ldc] = c31; C[3 + 2 * ldc] = c32; C[3 + 3 * ldc] = c33;
+
+    /* store results */
+    C[0 + 0 * ldc] = c00;   C[0 + 1 * ldc] = c01;
+    C[0 + 2 * ldc] = c02;   C[0 + 3 * ldc] = c03;
+
+    C[1 + 0 * ldc] = c10;   C[1 + 1 * ldc] = c11;
+    C[1 + 2 * ldc] = c12;   C[1 + 3 * ldc] = c13;
+
+    C[2 + 0 * ldc] = c20;   C[2 + 1 * ldc] = c21;
+    C[2 + 2 * ldc] = c22;   C[2 + 3 * ldc] = c23;
+
+    C[3 + 0 * ldc] = c30;   C[3 + 1 * ldc] = c31;
+    C[3 + 2 * ldc] = c32;   C[3 + 3 * ldc] = c33;
 }
 
 // 4x4マイクロカーネルを使用したDGEMM実装(NN版) - 4の倍数サイズのみ対応
@@ -81,34 +112,13 @@ void dgemm_noavx4x4_kernel_nn(int m, int n, int k, double alpha, const double *A
         }
         return;
     }
-    
-    // 一時バッファの確保
-    std::vector<double> C_temp(4 * 4);
-// ブロックごとに処理（4x4ブロック単位）
-    for (int j = 0; j < n; j += 4) {
-        for (int i = 0; i < m; i += 4) {
-            // 一時バッファをゼロ初期化
-            for (int idx = 0; idx < 16; idx++) {
-                C_temp[idx] = 0.0;
-            }
-            
-            // マイクロカーネルを直接呼び出し - コピーなし
-            noavx_micro_kernel_4x4(k, &A[i], lda, &B[j * ldb], ldb, C_temp.data(), 4);
-            
-            // 結果をCに加算 (alpha倍とbeta倍を同時に適用)
-            for (int jj = 0; jj < 4; jj++) {
-                for (int ii = 0; ii < 4; ii++) {
-                    if (beta == 0.0) {
-                        // beta = 0の場合
-                        C[(i + ii) + (j + jj) * ldc] = alpha * C_temp[ii + jj * 4];
-                    } else {
-                        // FMA可能な形式: C = beta * C + alpha * C_temp
-                        C[(i + ii) + (j + jj) * ldc] = beta * C[(i + ii) + (j + jj) * ldc] + alpha * C_temp[ii + jj * 4];
-                    }
-                }
-            }
-        }
-    }
+    for (int j = 0; j < n; j += 4)
+        for (int i = 0; i < m; i += 4)
+            noavx_micro_kernel_4x4(k,
+                                   &A[i],        lda,
+                                   &B[j * ldb],  ldb,
+                                   &C[i + j * ldc], ldc,
+                                   alpha, beta);
 }
 
 // Naive DGEMM implementation for verification
