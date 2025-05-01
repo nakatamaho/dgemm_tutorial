@@ -140,20 +140,48 @@ CPU の理論演算性能を評価する際には、以下３つの要素を組�
 
 2. **理論 FLOPS の式**  
 
-$$
-\mathrm{FLOPS} = (\text{コア数}) \times (\mathrm{FLOP/サイクル}) \times (\text{クロック周波数})
-$$
+Ryzen 3970Xの倍精度演算の理論性能について、まず1コアから計算した上で全コアの理論性能を導出する流れでまとめます。
 
-3. **数値代入**  
-   - コア数：32  
-   - クロック周波数：3.7 GHz = $3.7\times10^9$ サイクル/秒  
-   - FLOP/サイクル：16  
+## Ryzen 3970Xの倍精度演算（64 bit）理論性能
 
-$$
-32 \times 16 \times 3.7 \times 10^9 = 512 \times 3.7 \times 10^9 = 1.8944 \times 10^{12}\mathrm{FLOPS} \approx 1.89 \mathrm{TFLOPS}
-$$
+### 1コアあたりの演算性能の基本計算
 
-**1.89 TFLOPS**が3.7GHzの時のbinary64(倍精度)での理論性能値となります。
+#### サイクルあたりのFLOP数
+- 1命令あたり：4要素 × 2演算（乗算＋加算）= 8 FLOP
+- FMAパイプライン数：2本
+- 1サイクルあたり：8 FLOP × 2 = **16 FLOP/サイクル**
+
+#### 1コアの理論FLOPS
+理論FLOPSの基本式：
+$`\text{FLOPS} = \text{FLOP/cycle} \times \text{Clock Frequency (Hz)}`$
+
+**通常動作時（Base Clock: 3.7 GHz）**
+$`16 \times 3.7 \times 10^9 = 59.2 \times 10^9 = 59.2 \text{ GFLOPS}`$
+
+**ターボブースト時（Max Boost: 4.5 GHz）**
+$`16 \times 4.5 \times 10^9 = 72 \times 10^9 = 72 \text{ GFLOPS}`$
+
+### 全コア（32コア）の理論性能
+
+理論FLOPSの完全な式：
+$`\text{FLOPS} = \text{コア数} \times \text{FLOP/cycle} \times \text{Clock Frequency (Hz)}`$
+
+**通常動作時（3.7 GHz）**
+$`32 \times 16 \times 3.7 \times 10^9 = 512 \times 3.7 \times 10^9 = 1.8944 \times 10^{12} \text{ FLOPS} = 1.89 \text{ TFLOPS}`$
+
+**ターボブースト時（4.5 GHz）**
+$`32 \times 16 \times 4.5 \times 10^9 = 512 \times 4.5 \times 10^9 = 2.304 \times 10^{12} \text{ FLOPS} = 2.30 \text{ TFLOPS}`$
+
+### まとめ
+
+Ryzen 3970Xの倍精度（binary64）演算での理論性能：
+
+| 動作モード | 1コアあたり | 全32コア | 
+|------------|------------|----------|
+| ノーマル動作<br>(3.7 GHz) | 59.2 GFLOPS | **1.89 TFLOPS** |
+| ターボブースト<br>(4.5 GHz) | 72.0 GFLOPS | **2.30 TFLOPS** |
+
+※ 実際のターボブーストは温度やTDPにより変動するため、この値は理論的な最大値となります。
 
 ### (2) 単精度演算の場合（32 bit）
 
