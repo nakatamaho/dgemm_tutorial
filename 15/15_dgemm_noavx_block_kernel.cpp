@@ -82,78 +82,82 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha,
                           const double * __restrict A, int lda,
                           const double * __restrict B, int ldb, 
 			  double beta, double * __restrict C, int ldc) {
-    if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) return;
-
-    // Require exact multiples of MR/NR (keeps edge handling simple)
+    if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0))
+        return;
     if (m % MR != 0 || n % NR != 0 || k % 4 != 0) {
-        std::cerr << "Error: matrix dimensions must be multiples of MR/NR (4)." << std::endl;
+        std::cerr << "Error: matrix dims must be multiples of 4." << std::endl;
         return;
     }
 
-    // Main cache‑blocked loops (j – N, p – K, i – M)
+    // Loop over N in blocks of NC
     for (int j = 0; j < n; j += NC) {
         int nc = std::min(NC, n - j);
 
+        // Loop over K in blocks of KC
         for (int p = 0; p < k; p += KC) {
-            int kc         = std::min(KC, k - p);
+            int kc = std::min(KC, k - p);
             const bool first_k_block = (p == 0);
 
-            // -----------------------------------------------------------------
-            // Pack current kc×nc block of B, scaling by alpha during pack
-            // Layout: each NR‑sized column stripe becomes contiguous.
-            // -----------------------------------------------------------------
+            // Pack kc×nc block of B and scale by alpha
             for (int jr = 0; jr < nc; jr += NR) {
                 int nr = std::min(NR, nc - jr);
-
                 for (int l = 0; l < kc; ++l) {
-                    for (int jj = 0; jj < nr; ++jj) {
-                        Bpanel[jr * kc + l * NR + jj] = alpha * B[(p + l) + (j + jr + jj) * ldb];
-                    }
-                    for (int jj = nr; jj < NR; ++jj) { // zero‑pad
+                    for (int jj = 0; jj < nr; ++jj)
+                        Bpanel[jr * kc + l * NR + jj]
+                            = alpha * B[(p + l) + (j + jr + jj) * ldb];
+                    for (int jj = nr; jj < NR; ++jj)
                         Bpanel[jr * kc + l * NR + jj] = 0.0;
-                    }
                 }
             }
 
-            // -----------------------------------------------------------------
-            // Pack A and compute micro‑blocks
-            // -----------------------------------------------------------------
+            // Loop over M in blocks of MC
             for (int i = 0; i < m; i += MC) {
                 int mc = std::min(MC, m - i);
 
-                // Pack mc×kc slice of A (column‑major inside panel)
-                for (int ir = 0; ir < mc; ir += MR) {
-                    for (int l = 0; l < kc; ++l) {
-                        for (int ii = 0; ii < MR; ++ii) {
-                            Apanel[ir * kc + l * MR + ii] = A[(i + ir + ii) + (p + l) * lda];
+                // Pointer to the (i,j) corner of current C-panel
+                double *Cpanel = &C[i + j * ldc];
+
+                // initialize or scale C only on the first k-block
+                if (first_k_block) {
+                    if (beta == 0.0) {
+                        // zero out entire Cpanel
+                        for (int jj = 0; jj < nc; ++jj) {
+                            double *Ccol = Cpanel + jj * ldc;
+                            for (int ii = 0; ii < mc; ++ii)
+                                Ccol[ii] = 0.0;
+                        }
+                    }
+                    else if (beta != 1.0) {
+                        // scale existing Cpanel by beta
+                        for (int jj = 0; jj < nc; ++jj) {
+                            double *Ccol = Cpanel + jj * ldc;
+                            for (int ii = 0; ii < mc; ++ii)
+                                Ccol[ii] *= beta;
                         }
                     }
                 }
 
-                // Compute blocks C(i:i+mc, j:j+nc)
-                for (int jr = 0; jr < nc; jr += NR) {
-                    for (int ir = 0; ir < mc; ir += MR) {
-                        double *Cblock = &C[(i + ir) + (j + jr) * ldc];
-
-                        // Apply beta to C only once (first kc block)
-                        if (first_k_block) {
-                            if (beta == 0.0) {
-                                for (int jj = 0; jj < NR; ++jj)
-                                    for (int ii = 0; ii < MR; ++ii)
-                                        Cblock[ii + jj * ldc] = 0.0;
-                            } else if (beta != 1.0) {
-                                for (int jj = 0; jj < NR; ++jj)
-                                    for (int ii = 0; ii < MR; ++ii)
-                                        Cblock[ii + jj * ldc] *= beta;
-                            }
+                // Pack mc×kc slice of A into Apanel
+                for (int ir = 0; ir < mc; ir += MR) {
+                    for (int l = 0; l < kc; ++l) {
+                        for (int ii = 0; ii < MR; ++ii) {
+                            Apanel[ir * kc + l * MR + ii]
+                                = A[(i + ir + ii) + (p + l) * lda];
                         }
+                    }
+                }
 
-                        // Accumulate alpha*A*B into C
+                // Compute micro-kernel over the C blocks
+                for (int jr = 0; jr < nc; jr += NR) {
+                    // define Ccol_jr once per jr
+                    double *Ccol_jr = Cpanel + jr * ldc;
+                    for (int ir = 0; ir < mc; ir += MR) {
+                        double *Cblk = Ccol_jr + ir;
                         noavx_micro_kernel(
                             kc,
                             &Apanel[ir * kc], MR,
                             &Bpanel[jr * kc], NR,
-                            Cblock, ldc);
+                            Cblk, ldc);
                     }
                 }
             }

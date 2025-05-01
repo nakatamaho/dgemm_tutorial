@@ -107,7 +107,7 @@ void dgemm_avx_kernel_nn(int m, int n, int k, double alpha,
                 // Pointer to the (i,j) corner of current C-panel
                 double *Cpanel = &C[i + j * ldc];
 
-                // --- initialize or scale C only on the first k-block ---
+                // initialize or scale C only on the first k-block
                 if (first_k_block) {
                     if (beta == 0.0) {
                         // zero out entire Cpanel

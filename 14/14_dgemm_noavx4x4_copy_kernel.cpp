@@ -100,34 +100,55 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
     }
     // Process by panels (MR x NR panels)
     for (int j = 0; j < n; j += NR) {
+        int nr = std::min(NR, n - j);  // Handle boundary for partial blocks
+    
+        // Loop over M dimension (rows of C/A) with MR blocks
         for (int i = 0; i < m; i += MR) {
-
+            int mr = std::min(MR, m - i);  // Handle boundary for partial blocks
+        
             // Pointer to current C block (column-major)
             double *Cblk = &C[i + j * ldc];
-
-            // 1) Apply beta to the C block in place
+        
+            // Apply beta to the C block in place
             if (beta == 0.0) {
-                for (int jj = 0; jj < NR; ++jj)
-                    for (int ii = 0; ii < MR; ++ii)
+                // Zero out the block when beta is 0
+                for (int jj = 0; jj < nr; ++jj)
+                    for (int ii = 0; ii < mr; ++ii)
                         Cblk[ii + jj * ldc] = 0.0;
             } else if (beta != 1.0) {
-                for (int jj = 0; jj < NR; ++jj)
-                    for (int ii = 0; ii < MR; ++ii)
+                // Scale the block by beta when beta is not 1
+                for (int jj = 0; jj < nr; ++jj)
+                    for (int ii = 0; ii < mr; ++ii)
                         Cblk[ii + jj * ldc] *= beta;
             }
-
-            // 2) Pack the A panel (MR × k, column-major)
-            for (int l = 0; l < k; ++l)
-                for (int ii = 0; ii < MR; ++ii)
+        
+            // Pack the A panel (MR × k, column-major)
+            for (int l = 0; l < k; ++l) {
+            // Copy elements from A to panel buffer
+                for (int ii = 0; ii < mr; ++ii) {
                     Apanel[ii + l * MR] = A[(i + ii) + l * lda];
-
-            // 3) Pack the B panel (k × NR, column-major) and scale by alpha
-            for (int l = 0; l < k; ++l)
-                for (int jj = 0; jj < NR; ++jj)
+                }
+                // Zero-pad remaining elements if at boundary
+                for (int ii = mr; ii < MR; ++ii) {
+                    Apanel[ii + l * MR] = 0.0;
+                }
+            }
+        
+            // Pack the B panel (k × NR, column-major) and scale by alpha
+            for (int jj = 0; jj < nr; ++jj) {
+                // Copy elements from B to panel buffer with alpha scaling
+                for (int l = 0; l < k; ++l) {
                     Bpanel[l + jj * k] = alpha * B[l + (j+jj) * ldb];
-
-            // 4) Accumulate:  Cblk += Apanel · Bpanel
-            //    The micro kernel is written to add into C directly
+                }
+            }
+            // Zero-pad remaining elements if at boundary
+            for (int jj = nr; jj < NR; ++jj) {
+                for (int l = 0; l < k; ++l) {
+                    Bpanel[l + jj * k] = 0.0;
+                }
+            }
+            // Execute micro-kernel: Cblk += Apanel · Bpanel
+            // The micro kernel accumulates results directly into C
             noavx_micro_kernel(k, Apanel, MR, Bpanel, k, Cblk, ldc);
         }
     }

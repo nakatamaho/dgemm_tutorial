@@ -105,33 +105,51 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
     }
 
     for (int j = 0; j < n; j += NR) {
+        // Handle boundary for columns
+        int nr = std::min(NR, n - j);
+    
         for (int i = 0; i < m; i += MR) {
-
+            // Handle boundary for rows
+            int mr = std::min(MR, m - i);
+        
             /* C block pointer */
             double *Cblk = &C[i + j*ldc];
-
-            /* apply beta once */
+        
+            /* apply beta to C submatrix only within boundaries */
             if (beta == 0.0) {
-                for (int jj=0; jj<NR; ++jj)
-                    for (int ii=0; ii<MR; ++ii)
+                for (int jj=0; jj<nr; ++jj)
+                    for (int ii=0; ii<mr; ++ii)
                         Cblk[ii + jj*ldc] = 0.0;
             } else if (beta != 1.0) {
-                for (int jj=0; jj<NR; ++jj)
-                    for (int ii=0; ii<MR; ++ii)
+                for (int jj=0; jj<nr; ++jj)
+                    for (int ii=0; ii<mr; ++ii)
                         Cblk[ii + jj*ldc] *= beta;
             }
 
-            /* pack A (MR × k) */
-            for (int l=0; l<k; ++l)
-                for (int ii=0; ii<MR; ++ii)
+            /* pack A (MR × k) with zero padding for boundary cases */
+            for (int l=0; l<k; ++l) {
+                // Copy valid elements
+                for (int ii=0; ii<mr; ++ii)
                     Apanel[ii + l*MR] = A[(i+ii) + l*lda];
+                // Zero-pad for boundary
+                for (int ii=mr; ii<MR; ++ii)
+                    Apanel[ii + l*MR] = 0.0;
+            }
 
-            /* pack Bᵗ (k × NR) and scale by α */
-            for (int l=0; l<k; ++l)
-                for (int jj=0; jj<NR; ++jj)
-                    Bpanel[jj + l* NR] = alpha * B[l + (j+jj)*ldb];
-
-            /* micro-kernel : Cblk += A·Bᵗ */
+            /* pack transposed B^t (NR × k) and scale by α */
+            /* Note: B^t stores row-major elements in column-major panel */
+            for (int jj=0; jj<nr; ++jj) {
+                // Copy valid elements and scale
+                for (int l=0; l<k; ++l)
+                    Bpanel[jj + l*NR] = alpha * B[l + (j+jj)*ldb];
+            }
+            // Zero-pad for boundary in B^t panel
+            for (int jj=nr; jj<NR; ++jj) {
+                for (int l=0; l<k; ++l)
+                    Bpanel[jj + l*NR] = 0.0;
+            }
+            /* micro-kernel : Cblk += A·B^t */
+            /* Since B is transposed in panel, kernel computes A·B^t */
             noavx_micro_kernel(k, Apanel, MR,
                                   Bpanel, NR,
                                   Cblk,  ldc);
