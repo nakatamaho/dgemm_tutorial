@@ -37,51 +37,33 @@ void avx2_micro_kernel_4x4_aligned(int k,
                                    const double * __restrict A, int lda,
                                    const double * __restrict B, int ldb,
                                    double       * __restrict C, int ldc) {
-    // Load existing C block into vector registers (row‑major view)
-    __m256d c0 = _mm256_set_pd(C[0 + 3 * ldc], C[0 + 2 * ldc],
-                               C[0 + 1 * ldc], C[0 + 0 * ldc]);
-    __m256d c1 = _mm256_set_pd(C[1 + 3 * ldc], C[1 + 2 * ldc],
-                               C[1 + 1 * ldc], C[1 + 0 * ldc]);
-    __m256d c2 = _mm256_set_pd(C[2 + 3 * ldc], C[2 + 2 * ldc],
-                               C[2 + 1 * ldc], C[2 + 0 * ldc]);
-    __m256d c3 = _mm256_set_pd(C[3 + 3 * ldc], C[3 + 2 * ldc],
-                               C[3 + 1 * ldc], C[3 + 0 * ldc]);
+    // 1) Load the existing C-block into accumulators
+    __m256d c0 = _mm256_loadu_pd(&C[0 + 0*ldc]);
+    __m256d c1 = _mm256_loadu_pd(&C[0 + 1*ldc]);
+    __m256d c2 = _mm256_loadu_pd(&C[0 + 2*ldc]);
+    __m256d c3 = _mm256_loadu_pd(&C[0 + 3*ldc]);
 
+    // 2) Main loop over the shared dimension k
     for (int l = 0; l < k; ++l) {
-        // Broadcast one column of A (4 rows)
-        __m256d a0 = _mm256_set1_pd(A[0 + l * lda]);
-        __m256d a1 = _mm256_set1_pd(A[1 + l * lda]);
-        __m256d a2 = _mm256_set1_pd(A[2 + l * lda]);
-        __m256d a3 = _mm256_set1_pd(A[3 + l * lda]);
-
-        // Load a transposed row of B (4 contiguous elements)
-        __m256d b  = _mm256_load_pd(&B[0 + l * ldb]);
-
-        // FMA accumulate
-        c0 = _mm256_fmadd_pd(a0, b, c0);
-        c1 = _mm256_fmadd_pd(a1, b, c1);
-        c2 = _mm256_fmadd_pd(a2, b, c2);
-        c3 = _mm256_fmadd_pd(a3, b, c3);
+        // Load one column of A (4 elements)
+        __m256d a = _mm256_load_pd(&A[l * lda]);
+        // Broadcast each of the 4 B-elements from row l
+        __m256d b0 = _mm256_set1_pd(B[l * ldb + 0]);
+        __m256d b1 = _mm256_set1_pd(B[l * ldb + 1]);
+        __m256d b2 = _mm256_set1_pd(B[l * ldb + 2]);
+        __m256d b3 = _mm256_set1_pd(B[l * ldb + 3]);
+        // FMA accumulation
+        c0 = _mm256_fmadd_pd(a, b0, c0);
+        c1 = _mm256_fmadd_pd(a, b1, c1);
+        c2 = _mm256_fmadd_pd(a, b2, c2);
+        c3 = _mm256_fmadd_pd(a, b3, c3);
     }
 
-    // Store back to C (scalar, avoids alignment issues)
-    alignas(64) double tmp[4];
-
-    _mm256_store_pd(tmp, c0);
-    C[0 + 0 * ldc] = tmp[0]; C[0 + 1 * ldc] = tmp[1];
-    C[0 + 2 * ldc] = tmp[2]; C[0 + 3 * ldc] = tmp[3];
-
-    _mm256_store_pd(tmp, c1);
-    C[1 + 0 * ldc] = tmp[0]; C[1 + 1 * ldc] = tmp[1];
-    C[1 + 2 * ldc] = tmp[2]; C[1 + 3 * ldc] = tmp[3];
-
-    _mm256_store_pd(tmp, c2);
-    C[2 + 0 * ldc] = tmp[0]; C[2 + 1 * ldc] = tmp[1];
-    C[2 + 2 * ldc] = tmp[2]; C[2 + 3 * ldc] = tmp[3];
-
-    _mm256_store_pd(tmp, c3);
-    C[3 + 0 * ldc] = tmp[0]; C[3 + 1 * ldc] = tmp[1];
-    C[3 + 2 * ldc] = tmp[2]; C[3 + 3 * ldc] = tmp[3];
+    // 3) Store the updated accumulators back to C
+    _mm256_storeu_pd(&C[0 + 0*ldc], c0);
+    _mm256_storeu_pd(&C[0 + 1*ldc], c1);
+    _mm256_storeu_pd(&C[0 + 2*ldc], c2);
+    _mm256_storeu_pd(&C[0 + 3*ldc], c3);
 }
 
 // DGEMM implementation using 4x4 micro kernel with transposed B panel, using L3 cache blocking
