@@ -179,26 +179,52 @@ Ryzen 3970Xの倍精度（binary64）演算での理論性能：
 | 動作モード | 1コアあたり | 全32コア | 
 |------------|------------|----------|
 | ノーマル動作<br>(3.7 GHz) | 59.2 GFLOPS | **1.89 TFLOPS** |
-| ターボブースト<br>(4.5 GHz) | 72.0 GFLOPS | **2.30 TFLOPS** |
+| ターボブースト<br>(4.5 GHz) |  - | **2.30 TFLOPS** |
 
 ※ 実際のターボブーストは温度やTDPにより変動するため、この値は理論的な最大値となります。
 
-### (2) 単精度演算の場合（32 bit）
+Ryzen 3970Xの単精度演算の理論性能について、まず1コアから計算した上で全コアの理論性能を導出する流れでまとめます。
 
-1. **サイクルあたりの FLOP数**  
-   - 1 命令あたり：8 要素 × 2 演算（乗算＋加算）＝ 16 FLOP  
-   - FMA パイプライン数：2 本 ⇒ 16 FLOP × 2 = **32 FLOP/サイクル**
+## Ryzen 3970Xの単精度演算（32 bit）理論性能
 
-2. **数値代入**  
-   - コア数：32  
-   - クロック周波数：3.7 GHz  
-   - FLOP/サイクル：32  
+### 1コアあたりの演算性能の基本計算
 
-$$
-32 \times 32 \times 3.7 \times 10^9 = 1024 \times 3.7 \times 10^9 = 3.7888 \times 10^{12}\mathrm{FLOPS} \approx 3.79\mathrm{TFLOPS}
-$$
+#### サイクルあたりのFLOP数
+- 1命令あたり：8要素 × 2演算（乗算＋加算）= 16 FLOP
+- FMAパイプライン数：2本
+- 1サイクルあたり：16 FLOP × 2 = **32 FLOP/サイクル**
 
-**3.79 TFLOPS**が3.7GHzの時のbinary32(単精度)での理論性能値となります。
+#### 1コアの理論FLOPS
+理論FLOPSの基本式：
+$`\text{FLOPS} = \text{FLOP/cycle} \times \text{Clock Frequency (Hz)}`$
+
+**通常動作時（Base Clock: 3.7 GHz）**
+$`32 \times 3.7 \times 10^9 = 118.4 \times 10^9 = 118.4 \text{ GFLOPS}`$
+
+**ターボブースト時（Max Boost: 4.5 GHz）**
+$`32 \times 4.5 \times 10^9 = 144 \times 10^9 = 144 \text{ GFLOPS}`$
+
+### 全コア（32コア）の理論性能
+
+理論FLOPSの完全な式：
+$`\text{FLOPS} = \text{コア数} \times \text{FLOP/cycle} \times \text{Clock Frequency (Hz)}`$
+
+**通常動作時（3.7 GHz）**
+$`32 \times 32 \times 3.7 \times 10^9 = 1024 \times 3.7 \times 10^9 = 3.7888 \times 10^{12} \text{ FLOPS} = 3.79 \text{ TFLOPS}`$
+
+**ターボブースト時（4.5 GHz）**
+$`32 \times 32 \times 4.5 \times 10^9 = 1024 \times 4.5 \times 10^9 = 4.608 \times 10^{12} \text{ FLOPS} = 4.61 \text{ TFLOPS}`$
+
+### まとめ
+
+Ryzen 3970Xの単精度（binary32）演算での理論性能：
+
+| 動作モード | 1コアあたり | 全32コア | 
+|------------|------------|----------|
+| ノーマル動作<br>(3.7 GHz) | 118.4 GFLOPS | **3.79 TFLOPS** |
+| ターボブースト<br>(4.5 GHz) | 144.0 GFLOPS | - |
+
+※ 実際のターボブーストは温度やTDPにより変動するため、この値は理論的な最大値となります。
 
 ## 7. 注意点と実際の性能
 
