@@ -37,53 +37,73 @@ void avx2_micro_kernel_4x4_aligned(int k,
                                    const double * __restrict A, int lda,
                                    const double * __restrict B, int ldb,
                                    double       * __restrict C, int ldc) {
-    // Initialize column accumulators to zero
-    __m256d c0 = _mm256_setzero_pd(); // C column 0
-    __m256d c1 = _mm256_setzero_pd(); // C column 1
-    __m256d c2 = _mm256_setzero_pd(); // C column 2
-    __m256d c3 = _mm256_setzero_pd(); // C column 3
+    // Load existing C block into vector registers (row‑major view)
+    __m256d c0 = _mm256_set_pd(C[0 + 3 * ldc], C[0 + 2 * ldc],
+                               C[0 + 1 * ldc], C[0 + 0 * ldc]);
+    __m256d c1 = _mm256_set_pd(C[1 + 3 * ldc], C[1 + 2 * ldc],
+                               C[1 + 1 * ldc], C[1 + 0 * ldc]);
+    __m256d c2 = _mm256_set_pd(C[2 + 3 * ldc], C[2 + 2 * ldc],
+                               C[2 + 1 * ldc], C[2 + 0 * ldc]);
+    __m256d c3 = _mm256_set_pd(C[3 + 3 * ldc], C[3 + 2 * ldc],
+                               C[3 + 1 * ldc], C[3 + 0 * ldc]);
 
-    // Main loop over the shared dimension k
-    for (int l = 0; l < k; l++) {
-        // Load 4 rows of Apanel into a vector
-        __m256d a = _mm256_load_pd(&Apanel[l * lda]);
+    for (int l = 0; l < k; ++l) {
+        // Broadcast one column of A (4 rows)
+        __m256d a0 = _mm256_set1_pd(A[0 + l * lda]);
+        __m256d a1 = _mm256_set1_pd(A[1 + l * lda]);
+        __m256d a2 = _mm256_set1_pd(A[2 + l * lda]);
+        __m256d a3 = _mm256_set1_pd(A[3 + l * lda]);
 
-        // Broadcast each element of Bpanel’s l-th row
-        __m256d b0 = _mm256_set1_pd(Bpanel[l * ldb + 0]);
-        __m256d b1 = _mm256_set1_pd(Bpanel[l * ldb + 1]);
-        __m256d b2 = _mm256_set1_pd(Bpanel[l * ldb + 2]);
-        __m256d b3 = _mm256_set1_pd(Bpanel[l * ldb + 3]);
+        // Load a transposed row of B (4 contiguous elements)
+        __m256d b  = _mm256_load_pd(&B[0 + l * ldb]);
 
-        // FMA: accumulate a * b? into c?
-        c0 = _mm256_fmadd_pd(a, b0, c0);
-        c1 = _mm256_fmadd_pd(a, b1, c1);
-        c2 = _mm256_fmadd_pd(a, b2, c2);
-        c3 = _mm256_fmadd_pd(a, b3, c3);
+        // FMA accumulate
+        c0 = _mm256_fmadd_pd(a0, b, c0);
+        c1 = _mm256_fmadd_pd(a1, b, c1);
+        c2 = _mm256_fmadd_pd(a2, b, c2);
+        c3 = _mm256_fmadd_pd(a3, b, c3);
     }
 
-    // Store each column vector back to the C matrix block
-    _mm256_storeu_pd(&C[0 + 0*ldc], c0);
-    _mm256_storeu_pd(&C[0 + 1*ldc], c1);
-    _mm256_storeu_pd(&C[0 + 2*ldc], c2);
-    _mm256_storeu_pd(&C[0 + 3*ldc], c3);
+    // Store back to C (scalar, avoids alignment issues)
+    alignas(64) double tmp[4];
+
+    _mm256_store_pd(tmp, c0);
+    C[0 + 0 * ldc] = tmp[0]; C[0 + 1 * ldc] = tmp[1];
+    C[0 + 2 * ldc] = tmp[2]; C[0 + 3 * ldc] = tmp[3];
+
+    _mm256_store_pd(tmp, c1);
+    C[1 + 0 * ldc] = tmp[0]; C[1 + 1 * ldc] = tmp[1];
+    C[1 + 2 * ldc] = tmp[2]; C[1 + 3 * ldc] = tmp[3];
+
+    _mm256_store_pd(tmp, c2);
+    C[2 + 0 * ldc] = tmp[0]; C[2 + 1 * ldc] = tmp[1];
+    C[2 + 2 * ldc] = tmp[2]; C[2 + 3 * ldc] = tmp[3];
+
+    _mm256_store_pd(tmp, c3);
+    C[3 + 0 * ldc] = tmp[0]; C[3 + 1 * ldc] = tmp[1];
+    C[3 + 2 * ldc] = tmp[2]; C[3 + 3 * ldc] = tmp[3];
 }
+
 // DGEMM implementation using 4x4 micro kernel with transposed B panel, using L3 cache blocking
 void dgemm_avx_kernel_nn(int m, int n, int k, double alpha, 
                           const double * __restrict A, int lda,
                           const double * __restrict B, int ldb, 
 			  double beta, double * __restrict C, int ldc)
 {
-    if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) return;
+    if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0))
+        return;
     if (m % MR != 0 || n % NR != 0 || k % 4 != 0) {
         std::cerr << "Error: matrix dims must be multiples of 4." << std::endl;
         return;
     }
 
+    // Loop over N in blocks of NC
     for (int j = 0; j < n; j += NC) {
         int nc = std::min(NC, n - j);
 
+        // Loop over K in blocks of KC
         for (int p = 0; p < k; p += KC) {
-            int kc         = std::min(KC, k - p);
+            int kc = std::min(KC, k - p);
             const bool first_k_block = (p == 0);
 
             // Pack kc×nc block of B and scale by alpha
@@ -91,41 +111,56 @@ void dgemm_avx_kernel_nn(int m, int n, int k, double alpha,
                 int nr = std::min(NR, nc - jr);
                 for (int l = 0; l < kc; ++l) {
                     for (int jj = 0; jj < nr; ++jj)
-                        Bpanel[jr * kc + l * NR + jj] = alpha * B[(p + l) + (j + jr + jj) * ldb];
+                        Bpanel[jr * kc + l * NR + jj]
+                            = alpha * B[(p + l) + (j + jr + jj) * ldb];
                     for (int jj = nr; jj < NR; ++jj)
                         Bpanel[jr * kc + l * NR + jj] = 0.0;
                 }
             }
 
+            // Loop over M in blocks of MC
             for (int i = 0; i < m; i += MC) {
                 int mc = std::min(MC, m - i);
 
-                // Pack mc×kc slice of A
-                for (int ir = 0; ir < mc; ir += MR) {
-                    for (int l = 0; l < kc; ++l)
-                        for (int ii = 0; ii < MR; ++ii)
-                            Apanel[ir * kc + l * MR + ii] = A[(i + ir + ii) + (p + l) * lda];
+                // Pointer to the (i,j) corner of current C-panel
+                double *Cpanel = &C[i + j * ldc];
+
+                // --- initialize or scale C only on the first k-block ---
+                if (first_k_block) {
+                    if (beta == 0.0) {
+                        // zero out entire Cpanel
+                        for (int jj = 0; jj < nc; ++jj) {
+                            double *Ccol = Cpanel + jj * ldc;
+                            for (int ii = 0; ii < mc; ++ii)
+                                Ccol[ii] = 0.0;
+                        }
+                    }
+                    else if (beta != 1.0) {
+                        // scale existing Cpanel by beta
+                        for (int jj = 0; jj < nc; ++jj) {
+                            double *Ccol = Cpanel + jj * ldc;
+                            for (int ii = 0; ii < mc; ++ii)
+                                Ccol[ii] *= beta;
+                        }
+                    }
                 }
 
-                // Compute C blocks
-                for (int jr = 0; jr < nc; jr += NR) {
-                    for (int ir = 0; ir < mc; ir += MR) {
-                        double *Cblk = &C[(i + ir) + (j + jr) * ldc];
-
-                        // Apply beta once per C block (only on first kc chunk)
-                        if (first_k_block) {
-                            if (beta == 0.0) {
-                                for (int jj = 0; jj < NR; ++jj)
-                                    for (int ii = 0; ii < MR; ++ii)
-                                        Cblk[ii + jj * ldc] = 0.0;
-                            } else if (beta != 1.0) {
-                                for (int jj = 0; jj < NR; ++jj)
-                                    for (int ii = 0; ii < MR; ++ii)
-                                        Cblk[ii + jj * ldc] *= beta;
-                            }
+                // Pack mc×kc slice of A into Apanel
+                for (int ir = 0; ir < mc; ir += MR) {
+                    for (int l = 0; l < kc; ++l) {
+                        for (int ii = 0; ii < MR; ++ii) {
+                            Apanel[ir * kc + l * MR + ii]
+                                = A[(i + ir + ii) + (p + l) * lda];
                         }
+                    }
+                }
 
-                        // Call micro‑kernel (accumulates into Cblk)
+                // Compute micro-kernel over the C blocks
+                for (int jr = 0; jr < nc; jr += NR) {
+                    // define Ccol_jr once per jr
+                    double *Ccol_jr = Cpanel + jr * ldc;
+                    for (int ir = 0; ir < mc; ir += MR) {
+                        double *Cblk = Ccol_jr + ir;
                         avx2_micro_kernel_4x4_aligned(
                             kc,
                             &Apanel[ir * kc], MR,
