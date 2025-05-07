@@ -45,20 +45,34 @@ L3キャッシュを効果的に活用するためには、より大きなブロ
 ALIGN(CACHELINE) static double Apanel[MC * KC];
 ALIGN(CACHELINE) static double Bpanel[KC * NC];
 
-// L3レベルのループ内で
-// Aからパネルにコピー
-for (int i = 0; i < ib; i++) {
-    for (int p = 0; p < pb; p++) {
-        Apanel[i + p * MC] = A[(i + i0) + (p + p0) * lda];
-    }
-}
+    // Process by panels (MR x NR panels)
+    for (int j = 0; j < n; j += NR) {
+        int nr = std::min(NR, n - j);  // Handle boundary for partial blocks
 
-// Bからパネルにコピー
-for (int p = 0; p < pb; p++) {
-    for (int j = 0; j < jb; j++) {
-        Bpanel[p + j * KC] = B[(p + p0) + (j + j0) * ldb];
-    }
-}
+        // Pack the B panel (k × NR) and scale by alpha once per j-block
+        for (int jj = 0; jj < nr; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
+            }
+        }
+        // Zero-pad remaining columns in the B panel
+        for (int jj = nr; jj < NR; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[l + jj * k] = 0.0;
+            }
+        }
+        // Loop over M dimension (rows of C/A) with MR blocks
+        for (int i = 0; i < m; i += MR) {
+            // Pack the A panel (MR × k, column-major)
+            for (int l = 0; l < k; ++l) {
+                for (int ii = 0; ii < mr; ++ii) {
+                    Apanel[ii + l * MR] = A[(i + ii) + l * lda];
+                }
+                // Zero-pad remaining rows
+                for (int ii = mr; ii < MR; ++ii) {
+                    Apanel[ii + l * MR] = 0.0;
+                }
+            }
 ```
 
 パネル化により、L2キャッシュに収まるサイズのデータブロックを作成し、そのブロック内での計算を最適化できます。
@@ -104,19 +118,29 @@ double b3 = B[l + 3 * ldb];
 ```cpp
 // Allocate temporary buffers - 転置するので NCxKC
 double Bpanel[NC*KC];
+...
+    // Process by column panels (MR x NR)
+    for (int j = 0; j < n; j += NR) {
+        int nr = std::min(NR, n - j);  // columns in this panel
 
-// Copy B panel and transpose it for better cache utilization
-for (int jj = 0; jj < NR; jj++) {
-    for (int l = 0; l < k; l++) {
-            Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
+        // Pack transposed B panel (NR × k) and scale by alpha
+        for (int jj = 0; jj < nr; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[jj + l * NR] = alpha * B[l + (j + jj) * ldb];
+            }
         }
-}
-
-// マイクロカーネルでのアクセス（転置済みのアクセスパターン）
-double b0 = B[l + 0 * ldb];
-double b1 = B[l + 1 * ldb];
-double b2 = B[l + 2 * ldb];
-double b3 = B[l + 3 * ldb];
+        // Zero-pad remaining rows in B^T panel
+        for (int jj = nr; jj < NR; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[jj + l * NR] = 0.0;
+            }
+        }
+...
+        // Load elements from B (transposed access pattern)
+        double b0 = B[0 + l * ldb];
+        double b1 = B[1 + l * ldb];
+        double b2 = B[2 + l * ldb];
+        double b3 = B[3 + l * ldb];
 ```
 この実装ではカーネル内ではコード自体は同じになってます。しかし転置をとったことで、重要な変更点が2つあります：
 
