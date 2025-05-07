@@ -1,8 +1,21 @@
-# パネル化:L2キャッシュからL3キャッシュへの拡張への布石
+# パネル化: L2キャッシュ、L3キャッシュを上手に使う
 
 ## はじめに
 
-DGEMMの最適化において、CPUのキャッシュ階層を効率的に活用することが性能向上の鍵となります。前回のチュートリアルでは4×4のマイクロカーネルを実装し、L1/L2キャッシュに収まる小～中規模の行列では良好なパフォーマンスを達成しました。しかし、グラフからは、行列サイズがL2キャッシュの容量を超える（グラフの約1000付近）と、パフォーマンスが著しく低下していることがわかります。これには多段ブロックが有効です。ただいきなり多段ブロックを行うのはプログラムとしては難しくなります。したがって、マイクロカーネルの次の段階ブロック化として、パネル化技術の導入を行います。マイクロカーネルでは、アップデートされる部分のブロック化されたCはレジスタにありますが、A, B全体はL2に入っていることが前提です。次のブロック化としては、パネル化を行うことです。つまり、大きなA, Bを分割してL2に入れるということです。まず、ナイーブなパネル化を実装し、次にAのパネルの転置を行います。パネル化は実装上も利点があります。つまり転置やAB行列のα倍にも対応しやすくなります。残念ながらここで遅くなります。最適化しているはずなのに遅くなるのはフラストレーションが溜まりますが、少し我慢です。
+DGEMMの最適化において、CPUのキャッシュ階層を効率的に活用することが性能向上の鍵となります。前回のチュートリアルでは4×4のマイクロカーネルを実装し、L1/L2キャッシュに収まる小～中規模の行列では良好なパフォーマンスを達成しました。しかし、行列サイズがL2キャッシュの容量を超える（グラフ上では約1000×1000付近）と、L2ミスが増加し、L3キャッシュやメインメモリへのアクセスが頻発するため、性能が著しく低下してしまいます。
+
+本章では、この性能低下を抑え、L3キャッシュまで含めたより大きな作業セットを効率よく扱うためのパネル化手法をご紹介します。パネル化によりデータの連続性を保ち、TLBやプリフェッチ機構にも好影響を与えるストライドアクセスパターンを実現できます。
+
+## キャッシュ階層とデータフローの課題
+
+1. **L1/L2キャッシュのサイズ制限**
+   L1キャッシュは数十KB、L2キャッシュは数百KB程度と小容量です。そのため、大規模な行列演算ではすぐにキャッシュ外の領域へアクセスしてしまい、キャッシュミス率が高くなります。
+
+2. **L3キャッシュ利用時のTLB制約**
+   L3キャッシュは数MB～十数MBと大容量ですが、TLBエントリは数十エントリしか持たず、ページフォールトやTLBミスによる遅延も無視できません。行列をページ境界をまたいで非連続にアクセスすると、TLBミスでさらなるレイテンシ悪化が発生します。
+
+3. **メモリバンド幅の壁**
+   メインメモリへのアクセスは数十サイクルの遅延を伴うため、キャッシュミスが増えると演算パフォーマンスがメモリバウンドとなり、マイクロカーネルの最適化効果が十分に発揮されなくなります。
 
 ## 現在の実装の限界
 
@@ -29,8 +42,23 @@ for (int j = 0; j < n; j += NR) {
 
 ## パネル化技術の導入
 
-L3キャッシュを効果的に活用するためには、より大きなブロックサイズを導入した多段階のブロック分割が必要です。ただ、いきなり多段のブロック化を行うのは大変で
-大きな行列を効率的に処理するために、まず「パネル化」（Panelization）と呼ばれる技術を考慮します：
+* **パネルサイズの選定**
+
+  * 行方向（M軸）にMR×KBのAパネル、列方向（N軸）にKR×NCのBパネルという単位でコピーを行います。
+  * コピーを行うことでキャッシュに乗ります(載りやすくなります)
+  * KBはL2キャッシュ容量の1/3～1/2程度に設定し、1パネル分のAをL2にと1パネル分のBをL3に常駐させつつ、マイクロカーネルを連続実行できるようにします。
+
+* **コピーのストライド**
+
+  * 元の行列からパネルへのコピーは連続アクセスで行います。
+  * パネル内のメモリアクセスはマイクロカーネルの計算アクセスと同様に連続的で、TLBミスを抑制します。
+
+* **ペナルティのペイオフ**
+
+  * コピー操作自体に追加コストは発生しますが、パネル化によりキャッシュミスが大幅に削減され、トータルで性能が向上します。
+
+* ナイーブなパネル化のコード
+  以下のようになります。
 
 ```cpp
 #define CACHELINE 64
@@ -45,31 +73,45 @@ L3キャッシュを効果的に活用するためには、より大きなブロ
 ALIGN(CACHELINE) static double Apanel[MC * KC];
 ALIGN(CACHELINE) static double Bpanel[KC * NC];
 
-// L3レベルのループ内で
-// Aからパネルにコピー
-for (int i = 0; i < ib; i++) {
-    for (int p = 0; p < pb; p++) {
-        Apanel[i + p * MC] = A[(i + i0) + (p + p0) * lda];
-    }
-}
+    // Process by panels (MR x NR panels)
+    for (int j = 0; j < n; j += NR) {
+        int nr = std::min(NR, n - j);  // Handle boundary for partial blocks
 
-// Bからパネルにコピー
-for (int p = 0; p < pb; p++) {
-    for (int j = 0; j < jb; j++) {
-        Bpanel[p + j * KC] = B[(p + p0) + (j + j0) * ldb];
-    }
-}
+        // Pack the B panel (k × NR) and scale by alpha once per j-block
+        for (int jj = 0; jj < nr; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
+            }
+        }
+        // Zero-pad remaining columns in the B panel
+        for (int jj = nr; jj < NR; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[l + jj * k] = 0.0;
+            }
+        }
+        // Loop over M dimension (rows of C/A) with MR blocks
+        for (int i = 0; i < m; i += MR) {
+            // Pack the A panel (MR × k, column-major)
+            for (int l = 0; l < k; ++l) {
+                for (int ii = 0; ii < mr; ++ii) {
+                    Apanel[ii + l * MR] = A[(i + ii) + l * lda];
+                }
+                // Zero-pad remaining rows
+                for (int ii = mr; ii < MR; ++ii) {
+                    Apanel[ii + l * MR] = 0.0;
+                }
+            }
 ```
 
 パネル化により、L2キャッシュに収まるサイズのデータブロックを作成し、そのブロック内での計算を最適化できます。
 
-# パネルの転置
+## Bパネルの転置
 
-## 転置によるメモリアクセスの最適化
+### 転置によるメモリアクセスの最適化
 
 ここからは行列の転置がDGEMM性能に与える影響について説明します。C/C++では配列は行優先（row-major）で格納されるため、行列乗算のような処理では、メモリアクセスパターンが非効率になる場合があります。
 
-## 行列Bをそのまま使用する実装
+### 行列Bをそのまま使用する実装
 
 最初の実装では、行列Bをそのままの形で使用しています：
 
@@ -78,12 +120,12 @@ for (int p = 0; p < pb; p++) {
 double Apanel[MC * KC];
 
 
-// Copy B and multiply by alpha - k rows x NR columns panel
-for (int jj = 0; jj < NR; jj++) {
-    for (int l = 0; l < k; l++) {
-        Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
-    }
-}
+        // Pack the B panel (k × NR) and scale by alpha once per j-block
+        for (int jj = 0; jj < nr; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
+            }
+        }
 
 // マイクロカーネルでのアクセス
 double b0 = B[l + 0 * ldb];
@@ -93,37 +135,47 @@ double b3 = B[l + 3 * ldb];
 ```
 この方法では、マイクロカーネル内で行列Bの要素にアクセスする際、`l`が変化すると大きなメモリアドレスの変化（ストライド）が生じます。このような非連続的なメモリアクセスはキャッシュミスを引き起こし、パフォーマンスを低下させる原因となります。
 
-## そのままの場合の計算結果
+### そのままの場合の計算結果
 ![DGEMM ベンチマークプロット](14/dgemm_benchmark_comparison_plot.png)
 
 
-## 行列Bを転置して使用する実装
+### 行列Bを転置して使用する実装
 
 提供されたコードサンプルの2つ目の実装では、行列Bをコピーする際に転置を行っています：
 
 ```cpp
 // Allocate temporary buffers - 転置するので NCxKC
 double Bpanel[NC*KC];
+...
+    // Process by column panels (MR x NR)
+    for (int j = 0; j < n; j += NR) {
+        int nr = std::min(NR, n - j);  // columns in this panel
 
-// Copy B panel and transpose it for better cache utilization
-for (int jj = 0; jj < NR; jj++) {
-    for (int l = 0; l < k; l++) {
-            Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
+        // Pack transposed B panel (NR × k) and scale by alpha
+        for (int jj = 0; jj < nr; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[jj + l * NR] = alpha * B[l + (j + jj) * ldb];
+            }
         }
-}
-
-// マイクロカーネルでのアクセス（転置済みのアクセスパターン）
-double b0 = B[l + 0 * ldb];
-double b1 = B[l + 1 * ldb];
-double b2 = B[l + 2 * ldb];
-double b3 = B[l + 3 * ldb];
+        // Zero-pad remaining rows in B^T panel
+        for (int jj = nr; jj < NR; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[jj + l * NR] = 0.0;
+            }
+        }
+...
+        // Load elements from B (transposed access pattern)
+        double b0 = B[0 + l * ldb];
+        double b1 = B[1 + l * ldb];
+        double b2 = B[2 + l * ldb];
+        double b3 = B[3 + l * ldb];
 ```
 この実装ではカーネル内ではコード自体は同じになってます。しかし転置をとったことで、重要な変更点が2つあります：
 
 1. **カーネルの変更点の少なさ**: 元のB行列では離れた位置にあるデータが、Bpanelでは隣接して配置されるため、カーネル内のコードを変更せずにパフォーマンスが向上します。
 2. **コピー時の転置**: 内側と外側のループが入れ替わり、データを転置しながらコピーします。ついでにαもかけておきます。
 
-## 転置した場合の計算結果
+### 転置した場合の計算結果
 
 ![DGEMM ベンチマークプロット](14/dgemm_benchmark_comparison_plot.png)
 
@@ -131,7 +183,7 @@ double b3 = B[l + 3 * ldb];
 2. 行列のサイズが64, 128, 256の倍数のときにパフォーマンスが落ちます。これは、キャッシュのL1/L2 キャッシュの セット衝突 (conflict-miss)が起こるのが主な原因です。少しずらすと改善します。対処は後に行う予定です。たとえば、IntelMKLでも[Tip 6: Avoid Leading Dimensions that are Multiples of 256](https://www.intel.com/content/www/us/en/developer/articles/technical/a-simple-example-to-measure-the-performance-of-an-intel-mkl-function.html)となってます。
 3. どのようなサイズでもnaive実装、4x4カーネル版より遅くなります。心理的には苦しいところです。
 
-## 転置による性能への影響
+### 転置による性能への影響
 
 転置を行うことで以下のメリットがあります：
 
