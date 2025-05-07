@@ -77,85 +77,76 @@ void dgemm_noavx_kernel_nn(int m, int n, int k, double alpha, const double *A, i
     if (m == 0 || n == 0 || ((alpha == 0.0 || k == 0) && beta == 1.0)) {
         return;  // Nothing to do
     }
-
     // Check for size multiples of MR/NR
     if (m % MR != 0 || n % NR != 0 || k % 4 != 0) {
         std::cerr << "Error: Matrix dimensions must be multiples of MR/NR." << std::endl;
         return;
     }
-
     // Handle alpha == 0 case
     if (alpha == 0.0) {
         if (beta == 0.0) {
             // C = 0
-            for (int j = 0; j < n; j++) {
-                for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; ++j)
+                for (int i = 0; i < m; ++i)
                     C[i + j * ldc] = 0.0;
-                }
-            }
         } else {
             // C = beta * C
-            for (int j = 0; j < n; j++) {
-                for (int i = 0; i < m; i++) {
+            for (int j = 0; j < n; ++j)
+                for (int i = 0; i < m; ++i)
                     C[i + j * ldc] = beta * C[i + j * ldc];
-                }
-            }
         }
         return;
     }
 
+    // Process by column panels (MR x NR)
     for (int j = 0; j < n; j += NR) {
-        // Handle boundary for columns
-        int nr = std::min(NR, n - j);
-    
+        int nr = std::min(NR, n - j);  // columns in this panel
+
+        // Pack transposed B panel (NR × k) and scale by alpha
+        for (int jj = 0; jj < nr; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[jj + l * NR] = alpha * B[l + (j + jj) * ldb];
+            }
+        }
+        // Zero-pad remaining rows in B^T panel
+        for (int jj = nr; jj < NR; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[jj + l * NR] = 0.0;
+            }
+        }
+
+        // Loop over row panels
         for (int i = 0; i < m; i += MR) {
-            // Handle boundary for rows
-            int mr = std::min(MR, m - i);
-        
-            /* C block pointer */
-            double *Cblk = &C[i + j*ldc];
-        
-            /* apply beta to C submatrix only within boundaries */
+            int mr = std::min(MR, m - i);  // rows in this panel
+            double *Cblk = &C[i + j * ldc];  // C block pointer
+
+            // Apply beta to C block
             if (beta == 0.0) {
-                for (int jj=0; jj<nr; ++jj)
-                    for (int ii=0; ii<mr; ++ii)
-                        Cblk[ii + jj*ldc] = 0.0;
+                for (int jj = 0; jj < nr; ++jj)
+                    for (int ii = 0; ii < mr; ++ii)
+                        Cblk[ii + jj * ldc] = 0.0;
             } else if (beta != 1.0) {
-                for (int jj=0; jj<nr; ++jj)
-                    for (int ii=0; ii<mr; ++ii)
-                        Cblk[ii + jj*ldc] *= beta;
+                for (int jj = 0; jj < nr; ++jj)
+                    for (int ii = 0; ii < mr; ++ii)
+                        Cblk[ii + jj * ldc] *= beta;
             }
 
-            /* pack A (MR × k) with zero padding for boundary cases */
-            for (int l=0; l<k; ++l) {
-                // Copy valid elements
-                for (int ii=0; ii<mr; ++ii)
-                    Apanel[ii + l*MR] = A[(i+ii) + l*lda];
-                // Zero-pad for boundary
-                for (int ii=mr; ii<MR; ++ii)
-                    Apanel[ii + l*MR] = 0.0;
+            // Pack A panel (MR × k) with zero padding
+            for (int l = 0; l < k; ++l) {
+                for (int ii = 0; ii < mr; ++ii)
+                    Apanel[ii + l * MR] = A[(i + ii) + l * lda];
+                for (int ii = mr; ii < MR; ++ii)
+                    Apanel[ii + l * MR] = 0.0;
             }
 
-            /* pack transposed B^t (NR × k) and scale by α */
-            /* Note: B^t stores row-major elements in column-major panel */
-            for (int jj=0; jj<nr; ++jj) {
-                // Copy valid elements and scale
-                for (int l=0; l<k; ++l)
-                    Bpanel[jj + l*NR] = alpha * B[l + (j+jj)*ldb];
-            }
-            // Zero-pad for boundary in B^t panel
-            for (int jj=nr; jj<NR; ++jj) {
-                for (int l=0; l<k; ++l)
-                    Bpanel[jj + l*NR] = 0.0;
-            }
-            /* micro-kernel : Cblk += A·B^t */
-            /* Since B is transposed in panel, kernel computes A·B^t */
+            // Micro-kernel: Cblk += A · B^T
             noavx_micro_kernel(k, Apanel, MR,
-                                  Bpanel, NR,
-                                  Cblk,  ldc);
+                               Bpanel, NR,
+                               Cblk,   ldc);
         }
     }
 }
+
 
 // Naive DGEMM implementation for verification
 void dgemm_naive(int m, int n, int k, double alpha, const double *A, int lda,
