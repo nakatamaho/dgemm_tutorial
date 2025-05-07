@@ -120,12 +120,12 @@ ALIGN(CACHELINE) static double Bpanel[KC * NC];
 double Apanel[MC * KC];
 
 
-// Copy B and multiply by alpha - k rows x NR columns panel
-for (int jj = 0; jj < NR; jj++) {
-    for (int l = 0; l < k; l++) {
-        Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
-    }
-}
+        // Pack the B panel (k × NR) and scale by alpha once per j-block
+        for (int jj = 0; jj < nr; ++jj) {
+            for (int l = 0; l < k; ++l) {
+                Bpanel[l + jj * k] = alpha * B[l + (j + jj) * ldb];
+            }
+        }
 
 // マイクロカーネルでのアクセス
 double b0 = B[l + 0 * ldb];
