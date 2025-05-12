@@ -81,3 +81,4 @@ static inline void noavx_micro_kernel(...)
 ## 結果
 ![DGEMM ベンチマークプロット](15/dgemm_benchmark_comparison_plot.png)
 
+1. **そこそこ良いパフォーマンス**: 今回は、10.1GFlopsでました。このカーネルはFMAx2+vmulsdと展開され、このカーネルでの理論性能値は3FLOP/cycleとなります。3.7GHzだとFMAで11.1GFlops、4.5GHz(TurboBoost)では、13.5GFlopsです。
