@@ -43,7 +43,7 @@ GEMMとは、general matrix multiplicationの略で、Dはdouble precision(binar
 | 1️⃣0️⃣    | [ブロッキングの数理](10_blocking.md) |
 | 1️⃣1️⃣   | [データの再利用:ランク-1アップデート法](11_rank_one_update.md) |
 | 1️⃣2️⃣   | [マイクロカーネルの設計](12_microkernel.md) |
-| 1️⃣3️⃣ | [AVX2(SIMD)を使わない4x4マイクロカーネルによるDGEMM高速化](13_microkernel_4x4_noAVX.md) |
+| 1️⃣3️⃣ | [AVX2(SIMD)を使わない4x4マイクロカーネルの実装](13_microkernel_4x4_noAVX.md) |
 | 1️⃣4️⃣  | [パネル化:L2キャッシュからL3キャッシュへの拡張への布石](14_panelization.md) |
 | 1️⃣5️⃣  |  |
 | 1️⃣6️⃣  | [激闘!AVX2マイクロカーネル解説](16_4x4_kernel_avx2.md)|
