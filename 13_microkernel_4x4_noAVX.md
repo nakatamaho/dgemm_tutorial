@@ -4,76 +4,90 @@
 
 ## NoAVX 4x4マイクロカーネルの実装
 
-今回実装したNoAVX 4x4マイクロカーネルは、AVX2などのSIMD命令を使わずにスカラー演算だけで実装された基本的なマイクロカーネルです。以下に実装の特徴を示します：
+今回実装したNoAVX 4x4マイクロカーネルは、AVX2などのSIMD命令を使わずにスカラー演算だけで実装された基本的なマイクロカーネルです。以下に実装の特徴を示します:
 
 ```cpp
-void noavx_micro_kernel_4x4(int k, const double *A, int lda,
-                           const double *B, int ldb, double *C, int ldc) {
-    // 一時変数に計算結果を蓄積
-    double c00 = 0.0, c01 = 0.0, c02 = 0.0, c03 = 0.0;
-    double c10 = 0.0, c11 = 0.0, c12 = 0.0, c13 = 0.0;
-    double c20 = 0.0, c21 = 0.0, c22 = 0.0, c23 = 0.0;
-    double c30 = 0.0, c31 = 0.0, c32 = 0.0, c33 = 0.0;
-    
-    // k方向に行列積を計算
-    for (int l = 0; l < k; l++) {
-        // Aの要素をロード
+// 4x4 マイクロカーネル (AVX2なし)
+void noavx_micro_kernel_4x4(int k,
+                            const double *A, int lda,
+                            const double *B, int ldb,
+                            double *C, int ldc,
+                            double alpha, double beta)
+{
+    /* temporary registers that will finally hold
+       beta*C + alpha*Σ_l a(il)*b(lj)                                  */
+    double c00 = beta * C[0 + 0 * ldc];
+    double c01 = beta * C[0 + 1 * ldc];
+    double c02 = beta * C[0 + 2 * ldc];
+    double c03 = beta * C[0 + 3 * ldc];
+
+    double c10 = beta * C[1 + 0 * ldc];
+    double c11 = beta * C[1 + 1 * ldc];
+    double c12 = beta * C[1 + 2 * ldc];
+    double c13 = beta * C[1 + 3 * ldc];
+
+    double c20 = beta * C[2 + 0 * ldc];
+    double c21 = beta * C[2 + 1 * ldc];
+    double c22 = beta * C[2 + 2 * ldc];
+    double c23 = beta * C[2 + 3 * ldc];
+
+    double c30 = beta * C[3 + 0 * ldc];
+    double c31 = beta * C[3 + 1 * ldc];
+    double c32 = beta * C[3 + 2 * ldc];
+    double c33 = beta * C[3 + 3 * ldc];
+
+    for (int l = 0; l < k; ++l) {
         double a0 = A[0 + l * lda];
         double a1 = A[1 + l * lda];
         double a2 = A[2 + l * lda];
         double a3 = A[3 + l * lda];
-        
-        // Bの要素をロード
+
         double b0 = B[l + 0 * ldb];
         double b1 = B[l + 1 * ldb];
         double b2 = B[l + 2 * ldb];
         double b3 = B[l + 3 * ldb];
-        
-        // 行列積の計算（16個の乗算と加算）
-        c00 += a0 * b0; c01 += a0 * b1; c02 += a0 * b2; c03 += a0 * b3;
-        c10 += a1 * b0; c11 += a1 * b1; c12 += a1 * b2; c13 += a1 * b3;
-        c20 += a2 * b0; c21 += a2 * b1; c22 += a2 * b2; c23 += a2 * b3;
-        c30 += a3 * b0; c31 += a3 * b1; c32 += a3 * b2; c33 += a3 * b3;
+
+        /* accumulate alpha*A*B directly */
+        c00 += alpha * a0 * b0;   c01 += alpha * a0 * b1;
+        c02 += alpha * a0 * b2;   c03 += alpha * a0 * b3;
+
+        c10 += alpha * a1 * b0;   c11 += alpha * a1 * b1;
+        c12 += alpha * a1 * b2;   c13 += alpha * a1 * b3;
+
+        c20 += alpha * a2 * b0;   c21 += alpha * a2 * b1;
+        c22 += alpha * a2 * b2;   c23 += alpha * a2 * b3;
+
+        c30 += alpha * a3 * b0;   c31 += alpha * a3 * b1;
+        c32 += alpha * a3 * b2;   c33 += alpha * a3 * b3;
     }
-    
-    // 結果をCに格納
-    C[0 + 0 * ldc] = c00; C[0 + 1 * ldc] = c01; C[0 + 2 * ldc] = c02; C[0 + 3 * ldc] = c03;
-    C[1 + 0 * ldc] = c10; C[1 + 1 * ldc] = c11; C[1 + 2 * ldc] = c12; C[1 + 3 * ldc] = c13;
-    C[2 + 0 * ldc] = c20; C[2 + 1 * ldc] = c21; C[2 + 2 * ldc] = c22; C[2 + 3 * ldc] = c23;
-    C[3 + 0 * ldc] = c30; C[3 + 1 * ldc] = c31; C[3 + 2 * ldc] = c32; C[3 + 3 * ldc] = c33;
+
+    /* store results */
+    C[0 + 0 * ldc] = c00;   C[0 + 1 * ldc] = c01;
+    C[0 + 2 * ldc] = c02;   C[0 + 3 * ldc] = c03;
+
+    C[1 + 0 * ldc] = c10;   C[1 + 1 * ldc] = c11;
+    C[1 + 2 * ldc] = c12;   C[1 + 3 * ldc] = c13;
+
+    C[2 + 0 * ldc] = c20;   C[2 + 1 * ldc] = c21;
+    C[2 + 2 * ldc] = c22;   C[2 + 3 * ldc] = c23;
+
+    C[3 + 0 * ldc] = c30;   C[3 + 1 * ldc] = c31;
+    C[3 + 2 * ldc] = c32;   C[3 + 3 * ldc] = c33;
 }
 ```
 
-### 最適化のポイント：rank1アップデートの実装
+### 最適化のポイント:rank1アップデートの実装
 
 1. **rank1アップデートの採用**: 行列演算において、効率的にデータを使いまわします。
 2. **レジスタの活用**: rank1 アップデートでは、結果のCはいったん読み込み、その後計算中は4x4の行列をそのままdoubleの変数として持つことにして、計算が終わったら書き戻すということを行います。そのようにして無駄なメモリ書き込みをせず、パフォーマンスを下げないようにします。
 3. **L2キャッシュをフルに生かす**: L2キャッシュからのデータ供給速度が演算より高速になるようにします。その為に、4x4のブロッキングを行います。
+4. **最適化**: 出力されたアセンブリとRyzen3970XのCPUの特性からこのカーネルを3FLOP/cycleで動かせます。理論性能値は3.7GHzで、11.1GFlops, 4.5GHzで、13.5GFLOPSです。10GFlopsなのでまずまずといったところでしょうか。
+
 
 問題点
 
-1. **最適化の効果がわかりづらい**: 3.7GFHzでFMAだと、7.4GFLOPSが性能の上限になりますが、Turbo Boostが効いているため性能がそれより高くなっています。
-2. **4の倍数のサイズの行列しか扱えない**: 端数処理はこの先でやります。
-3. **L3キャッシュは生かせない実装**: A, Bの幅$`k`$が大きくなると、行列A, BはL2のキャッシュの外に出ます。すると、このrank1 アップデートの目論見ははずれ、パフォーマンスが落ちるはずです。次の章でその対策をします。
-
-### 行列の定数倍の扱い
-
-α倍、β倍は以下のように行うと効率が良いです。
-```cpp
-            // 結果をCに加算 (alpha倍とbeta倍を同時に適用)
-            for (int jj = 0; jj < 4; jj++) {
-                for (int ii = 0; ii < 4; ii++) {
-                    if (beta == 0.0) {
-                        // beta = 0の場合
-                        C[(i + ii) + (j + jj) * ldc] = alpha * C_temp[ii + jj * 4];
-                    } else {
-                        // FMA可能な形式: C = beta * C + alpha * C_temp
-                        C[(i + ii) + (j + jj) * ldc] = beta * C[(i + ii) + (j + jj) * ldc] + alpha * C_temp[ii + jj * 4];
-                    }
-                }
-            }
-```
-
+1. **4の倍数のサイズの行列しか扱えない**: 端数処理はこの先でやります。
+2. **L3キャッシュは生かせない実装**: A, Bの幅$`k`$が大きくなると、行列A, BはL2のキャッシュの外に出ます。すると、このrank1 アップデートの目論見ははずれ、パフォーマンスが落ちるはずです。次の章でその対策をします。
 
 ## 結果
 
@@ -85,7 +99,7 @@ AVX2なし 4x4マイクロカーネル実装が単純なトリプルループ実
 
 一般的な傾向として、以下のような特性が観察できます：
 
-1. **Turbo Boost**: 3.7GHzだとFMAで7.4GFlopsが上限になります。Turbo Boostが効いているのでこのような結果が出ているのでしょうが、10GFlopsだと5GHzですかね？
+1. **Turbo Boost**: 3.7GHzだとFMAで11.1GFlopsが上限になります。Turbo Boostも効いています。4.5GHzでは、13.5GFlopsです。
 2. **小さなサイズ（L1キャッシュ内）**: マイクロカーネル実装は、ループのオーバーヘッドが減少するためナイーブな実装よりも多少高速化される傾向があります。
 
 3. **中サイズ（L2キャッシュ内）**: マイクロカーネル実装の優位性は顕著になります。これは、rank 1アップデートによる行列-行列積がキャッシュ効率が向上するためです。ただ、そもそもAVX2を使わないため、そこまで効率は向上しません。
