@@ -318,7 +318,7 @@ cf. [OpenBLASのIssue](https://github.com/OpenMathLib/OpenBLAS/issues/3435)
 3. **性能のブレが大きい**
    - メモリの使い方が難しいようで、性能のブレが大きく見えました。10回測定して、最大と最小FLOPSを得ますが、特にに一回めの性能が悪くなりやすいようです。
 
-4. **LINPACKとの比較**
+4. **他のユーザーのLINPACKの結果との比較**
    [AMD Threadripper 3970x Compute Performance Linpack and NAMD](https://www.pugetsystems.com/labs/hpc/amd-threadripper-3970x-compute-performance-linpack-and-namd-1631/)によると、AMD BLIS library v 2.0を用いて、1.3233TFLOPSが得られています。なのでOpenBLASは、AMD BLISライブラリより良く性能を引き出せているようです。
 
 ## naive DGEMMと比較
