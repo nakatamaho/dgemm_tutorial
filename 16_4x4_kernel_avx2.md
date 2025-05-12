@@ -3,7 +3,40 @@
 **実況・山田＆解説・似鳥**
 
 ---
+```cpp
+void avx2_micro_kernel_4x4_aligned(int k,
+                                   const double * __restrict A, int lda,
+                                   const double * __restrict B, int ldb,
+                                   double       * __restrict C, int ldc) {
+    // 1) Load the existing C-block into accumulators
+    __m256d c0 = _mm256_loadu_pd(&C[0 + 0*ldc]);
+    __m256d c1 = _mm256_loadu_pd(&C[0 + 1*ldc]);
+    __m256d c2 = _mm256_loadu_pd(&C[0 + 2*ldc]);
+    __m256d c3 = _mm256_loadu_pd(&C[0 + 3*ldc]);
 
+    // 2) Main loop over the shared dimension k
+    for (int l = 0; l < k; ++l) {
+        // Load one column of A (4 elements)
+        __m256d a = _mm256_load_pd(&A[l * lda]);
+        // Broadcast each of the 4 B-elements from row l
+        __m256d b0 = _mm256_set1_pd(B[l * ldb + 0]);
+        __m256d b1 = _mm256_set1_pd(B[l * ldb + 1]);
+        __m256d b2 = _mm256_set1_pd(B[l * ldb + 2]);
+        __m256d b3 = _mm256_set1_pd(B[l * ldb + 3]);
+        // FMA accumulation
+        c0 = _mm256_fmadd_pd(a, b0, c0);
+        c1 = _mm256_fmadd_pd(a, b1, c1);
+        c2 = _mm256_fmadd_pd(a, b2, c2);
+        c3 = _mm256_fmadd_pd(a, b3, c3);
+    }
+
+    // 3) Store the updated accumulators back to C
+    _mm256_storeu_pd(&C[0 + 0*ldc], c0);
+    _mm256_storeu_pd(&C[0 + 1*ldc], c1);
+    _mm256_storeu_pd(&C[0 + 2*ldc], c2);
+    _mm256_storeu_pd(&C[0 + 3*ldc], c3);
+}
+```
 **山田**: 皆さんこんばんは！お待たせしました！本日のメインイベント、AVX2マイクロカーネル4×4大決戦！私、実況の山田がお送りします！解説は似鳥さんです！
 
 **似鳥**: ご覧いただきありがとうございます、似鳥です。今日は高速行列計算の最前線、AVX2マイクロカーネルの解説をさせていただきます！まさに計算機科学のリングの上で繰り広げられる熱い戦いですね！
