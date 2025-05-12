@@ -278,16 +278,14 @@ $$2N^2 \times 8\ (\mathrm{Bytes})$$
 1. **キャッシュサイズからの境界となる行列サイズの導出**
 
    - **L1 キャッシュ**：2048 KB
-L1境界：
-$$2N^2\times8 = 2{,}048 \mathrm{kB} \Rightarrow N\approx362$$  
+L1境界：$`2N^2\times8 = 2{,}048 \mathrm{kB} \Rightarrow N\approx362`$  
 
    - **L2 キャッシュ**：16 MB
 L2境界：
-$$2N^2\times8 = 16 \mathrm{MB}\Rightarrow N=1024$$  
+$`2N^2\times8 = 16 \mathrm{MB}\Rightarrow N=1024`$  
 
    - **L3 キャッシュ**：128 MB
-L3境界：
-$$2N^2\times8 = 128 \mathrm{MB}\Rightarrow N\approx2896$$  
+L3境界：$`2N^2\times8 = 128 \mathrm{MB}\Rightarrow N\approx2896`$  
 
 2. **理論値に遠く及ばない性能**
    - binary64(倍精度)で[1.89 TFLOPS](https://github.com/nakatamaho/dgemm_tutorial/blob/main/02_flops.md)が理論性能値でした。
@@ -296,39 +294,29 @@ $$2N^2\times8 = 128 \mathrm{MB}\Rightarrow N\approx2896$$
    - つまり、1コア、SIMDなしFMAありの場合の理論性能値では、92%も出ていました(Turboも入っているため正確ではない)。
 
 3. **L1キャッシュ領域**  
-   - 条件：
-$$2N^2\times8 \le 2\,048\ \mathrm{kB}\quad (N \lesssim 362)$$  
+   - 条件：$`2N^2\times8 \le 2\,048\ \mathrm{kB}\quad (N \lesssim 362)`$  
    - 行列が完全にL1キャッシュ内に収まるため、FMAのみを使い、SIMDを使わないが、計算自体に滞りはない。  
-   - 性能は行列サイズ増加とともにほぼ線形に上昇し、
-$$N=85$$でピークの6.7990GFLOPSを記録。  
-   - この領域における平均性能は  
-$$5.38\ \mathrm{GFLOPS}\quad(\sigma=1.62\ \mathrm{GFLOPS})$$  
+   - 性能は行列サイズ増加とともにほぼ線形に上昇し、$`N=85`$でピークの6.7990GFLOPSを記録。  
+   - この領域における平均性能は $`5.38\ \mathrm{GFLOPS}\quad(\sigma=1.62\ \mathrm{GFLOPS})`$  
      と大きなばらつきを含む。
 
 4. **L2キャッシュ領域**  
-   - 条件：
-$$2N^2\times8 \le 16\ \mathrm{MB}\quad (362 \lesssim N \le 1024)$$  
+   - 条件：$`2N^2\times8 \le 16\ \mathrm{MB}\quad (362 \lesssim N \le 1024)`$  
    - ワーキングセットがL2キャッシュに収まるため、キャッシュミスが抑えられ最も安定して高い性能レベルを維持。  
-   - 平均性能は  
-$$6.72\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$  
+   - 平均性能は  $`6.72\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})`$  
      で、ピーク近傍の高い性能を継続。
 
 5. **L3キャッシュ領域**  
-   - 条件：
-$$2N^2\times8 \le 128\ \mathrm{MB}\quad (1024 \lesssim N \le 2896)$$  
+   - 条件：$`2N^2\times8 \le 128\ \mathrm{MB}\quad (1024 \lesssim N \le 2896)`$  
    - データがL3キャッシュ内にはあるもののL2を超えるため、ミス率上昇に伴い性能が漸減。
-   - $$N\approx1024$$付近では約6.77GFLOPSを維持するものの、  
-$$N\approx2896$$付近では約3.37GFLOPSまで低下。  
-   - 平均性能は  
-$$4.22\ \mathrm{GFLOPS}\quad(\sigma=1.04\ \mathrm{GFLOPS})$$  
+   - $`N\approx1024`$付近では約6.77GFLOPSを維持するものの、  $`N\approx2896`$付近では約3.37GFLOPSまで低下。  
+   - 平均性能は  $`4.22\ \mathrm{GFLOPS}\quad(\sigma=1.04\ \mathrm{GFLOPS})`$  
      と大きく変動する移行領域。
 
 6. **メインメモリ領域**  
-   - 条件：
-$$N \gtrsim 2896$$  
+   - 条件：$`N \gtrsim 2896`$  
    - 行列データがL3を超え、DRAM帯域幅が性能制約となる。  
-   - 平均性能は  
-$$3.65\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})$$  
+   - 平均性能は  $3.65\ \mathrm{GFLOPS}\quad(\sigma=0.056\ \mathrm{GFLOPS})`$  
      でほぼ横ばいになる。
 
 ## 注意点
