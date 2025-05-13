@@ -7,7 +7,7 @@ DGEMMの最適化において、CPUのキャッシュ階層を効率的に活用
 本章では、この性能低下を抑え、L3キャッシュまで含めたより大きな作業セットを効率よく扱うためのパネル化手法を紹介します。パネル化によりデータの連続性を保ち、TLBやプリフェッチ機構にも好影響を与えるストライドアクセスパターンを実現できます。
 
 これは[KAZUSHIGE GOTO, ROBERT A. VAN DE GEIJN](https://www.cs.utexas.edu/~flame/pubs/GotoTOMS_final.pdf) の論文に詳しく書かれている技術のごく一部です。論文はrank-k update、BLASでいうところのsyrkを中心に描かれています。
-NotebookLMによる[ポッドキャスト解説]([14/High-Performance Matrix Multiplication Anatomy.wav](14/High-Performance%20Matrix%20Multiplication%20Anatomy.wav)、を聞くのも良いかもしれません。わかりやすいです。
+NotebookLMによる[ポッドキャスト解説](https://notebooklm.google.com/notebook/c8de02a3-8634-43ab-a61f-89439e36a6a7/audio) [githubのコピー](14/High-Performance%20Matrix%20Multiplication%20Anatomy.wav)、を聞くのも良いかもしれません。わかりやすいです。
 
 ## キャッシュ階層とデータフローの課題
 
