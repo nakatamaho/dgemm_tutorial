@@ -1,5 +1,9 @@
 # DGEMM カーネルサイズ比較の詳細分析 - Ryzen Threadripper 3970X
 
+
+## さまざまなサイズのAVX2カーネルでのベンチマーク
+![DGEMM ベンチマークプロット](17/all_kernels_comparison.png)
+
 ## ハードウェア特性との関連
 
 AMD Ryzen Threadripper 3970Xの特性を考慮すると、パフォーマンス差が生じる理由が見えてきます：
