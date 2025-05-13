@@ -124,4 +124,4 @@ static inline void noavx_micro_kernel(...)
 ![DGEMM ベンチマークプロット](15/dgemm_benchmark_comparison_plot.png)
 
 1. **メモリ転送の効率的な利用ができた**: データの使いまわし、データの流入のスケジュールが上手くいっています。L1, L2, L3に収まらない行列に対してもパフォーマンスが下がらないようになっています。パネル化によるコピーのオーバーヘッドも隠蔽できています。また、パネル化によって完全にメモリアクセスが連続になり、TLBミスが起こらず、キャッシュ効率がよいのも効いています。
-2. **そこそこ良いパフォーマンス**: 今回は、10.3GFlopsでました。このカーネルはAVXを用いないため、FMAx2+vmulsdと展開され、このカーネルでの理論性能値は3FLOP/cycleとなります。3.7GHzだとFMAで11.1GFlops、4.5GHz(TurboBoost)では、13.5GFlopsです。
+2. **そこそこ良いパフォーマンス**: 今回は、10.3GFlopsでました。このカーネルはAVXを用いないため、FMAx2+vmulsdと展開されました、このカーネルでの理論性能値は3FLOP/cycleとなります。3.7GHzだとFMAで11.1GFlops、4.5GHz(TurboBoost)では、13.5GFlopsです。
