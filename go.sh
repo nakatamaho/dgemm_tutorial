@@ -10,3 +10,7 @@ python3 plot.py --comp ../14/dgemm_benchmark_noavx_copy_trans_kernel_results.csv
 
 cd /home/maho/dgemm_tutorial/16 ; g++ -O2 -march=native 16_dgemm_avx_block_kernel.cpp -o 16_dgemm_avx_block_kernel;  ./16_dgemm_avx_block_kernel --nocheck ; \
 python3 plot.py --comp ../15/dgemm_benchmark_noavx_block_kernel_results.csv
+
+
+cd /home/maho/dgemm_tutorial/16 ; g++ -O2 -march=native 16_dgemm_avx_block_kernel.cpp -o 16_dgemm_avx_block_kernel;  ./16_dgemm_avx_block_kernel --nocheck ; \
+python3 plot.py --comp ../15/dgemm_benchmark_noavx_block_kernel_results.csv
