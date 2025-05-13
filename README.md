@@ -47,4 +47,4 @@ GEMMとは、general matrix multiplicationの略で、Dはdouble precision(binar
 | 1️⃣4️⃣  | [パネル化:L2キャッシュからL3キャッシュへの拡張への布石](14_panelization.md) |
 | 1️⃣5️⃣  | [DGEMM実装におけるブロック化技術](15_blocked.md) | 
 | 1️⃣6️⃣  | [激闘!AVX2マイクロカーネル解説](16_4x4_kernel_avx2.md)|
-| 1️⃣6️⃣    |[DGEMM カーネルサイズ比較の詳細分析 - Ryzen Threadripper 3970X](17_avx2_kernels.md)|
+| 1️⃣7️⃣    |[DGEMM カーネルサイズ比較の詳細分析 - Ryzen Threadripper 3970X](17_avx2_kernels.md)|
