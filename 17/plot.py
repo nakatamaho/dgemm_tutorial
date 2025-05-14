@@ -71,7 +71,7 @@ def plot_kernels(csv_files, output_file):
     for x, lbl in [(45,"L1"), (1024,"L2"), (2896,"L3")]:
         plt.axvline(x=x, color="gray", linestyle="--", linewidth=1)
         plt.text(x+5, plt.ylim()[1]*0.9, lbl,
-                 color='red', rotation=90, va="top", weight="bold")
+                 color='red', rotation=0, va="top", weight="bold")
 
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.legend(loc="best", fontsize=11)
