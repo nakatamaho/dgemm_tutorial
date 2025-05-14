@@ -7,6 +7,7 @@ g++ -O3 -march=native -funroll-loops 17_dgemm_8x4avx2_kernel.cpp    -o 17_dgemm_
 g++ -O3 -march=native -funroll-loops 17_dgemm_8x6avx2_kernel.cpp    -o 17_dgemm_8x6avx2_kernel  ; ./17_dgemm_8x6avx2_kernel   --nocheck
 g++ -O3 -march=native -funroll-loops 17_dgemm_8x8avx2_kernel.cpp    -o 17_dgemm_8x8avx2_kernel  ; ./17_dgemm_8x8avx2_kernel   --nocheck
 g++ -O3 -march=native -funroll-loops 17_dgemm_12x4avx2_kernel.cpp   -o 17_dgemm_12x4avx2_kernel ; ./17_dgemm_12x4avx2_kernel  --nocheck
+g++ -O3 -march=native 17_dgemm_openblas.cpp  -o 17_dgemm_openblas ../07/OpenBLAS-0.3.29/libopenblas_zenp-r0.3.29.a   ; ./17_dgemm_openblas --nocheck
 
 python3 plot.py \
   dgemm_benchmark_12x4avx2_kernel_results.csv \
@@ -17,5 +18,6 @@ python3 plot.py \
   dgemm_benchmark_8x4avx2_kernel_results.csv \
   dgemm_benchmark_8x6avx2_kernel_results.csv \
   dgemm_benchmark_8x8avx2_kernel_results.csv \
+  dgemm_benchmark_openblas_results.csv \
   --out all_kernels_comparison.png
 
