@@ -79,6 +79,7 @@ def plot_kernels(csv_files, output_file):
     plt.ylabel("Performance (GFLOPS)", fontsize=14)
     plt.title(f"DGEMM Kernel Comparison on {cpu_info}", fontsize=16)
 
+    plt.ylim(bottom=0)
     plt.tight_layout()
     plt.savefig(output_file, dpi=300)
     print(f"Saved comparison plot as {output_file}")
