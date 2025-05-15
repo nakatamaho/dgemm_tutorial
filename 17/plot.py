@@ -31,7 +31,9 @@ def plot_kernels(csv_files, output_file):
     plt.figure(figsize=(12,8))
 
     # choose markers and line styles in a cycle
-    styles = ["o-","s--","^-.", "d-","v--","*-.", "x-","p--","h-"]
+    styles = ["o-", "s--", "^-.", "d-", "v--", "*-.", "x-", "p--", "h-",
+        ">-", "<--", "D-.", "|-", "_--", "+-.", ".-", ",--"
+    ]
 
     for (csv, style) in zip(csv_files, styles):
         if not os.path.exists(csv):
@@ -79,7 +81,6 @@ def plot_kernels(csv_files, output_file):
     plt.ylabel("Performance (GFLOPS)", fontsize=14)
     plt.title(f"DGEMM Kernel Comparison on {cpu_info}", fontsize=16)
 
-    plt.ylim(0, 65)
     plt.tight_layout()
     plt.savefig(output_file, dpi=300)
     print(f"Saved comparison plot as {output_file}")
