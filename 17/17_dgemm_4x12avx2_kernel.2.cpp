@@ -14,11 +14,11 @@
 #endif
 
 // Define block sizes
-#define MR 4      // Keep the same (micro-kernel row dimension)
-#define NR 12     // Keep the same (micro-kernel column dimension)
-#define MC 96     // Reduced from 240 to better fit L1 cache (32KB)
-#define KC 480    // Increased from 256 to better utilize L2 cache (512KB)
-#define NC 3072   // Adjusted to better utilize L3 cache
+#define MR 4
+#define NR 12
+#define MC 96
+#define NC 2304
+#define KC 480
 
 #define CACHELINE 64
 #if defined(__GNUC__) || defined(__clang__)
@@ -52,46 +52,75 @@ void avx2_micro_kernel_4x12_aligned(int k,
     __m256d c10 = _mm256_loadu_pd(&C[0 + 10*ldc]);
     __m256d c11 = _mm256_loadu_pd(&C[0 + 11*ldc]);
     
-    // Main loop with slightly reordered operations for better instruction interleaving
-    for (int l = 0; l < k; ++l) {
-        // Load A early
-        __m256d a = _mm256_load_pd(&A[l * lda]);
+    // Main loop over the shared dimension k
+    for (int l = 0; l < k; l += 2) {
+        // First iteration
+        {
+            // Load A column (4 elements)
+            __m256d a0 = _mm256_loadu_pd(&A[l * lda]);
+            
+            // Use direct set1 operations - simpler and sometimes better on some architectures
+            __m256d b0 = _mm256_set1_pd(B[l * ldb + 0]);
+            __m256d b1 = _mm256_set1_pd(B[l * ldb + 1]);
+            __m256d b2 = _mm256_set1_pd(B[l * ldb + 2]);
+            __m256d b3 = _mm256_set1_pd(B[l * ldb + 3]);
+            __m256d b4 = _mm256_set1_pd(B[l * ldb + 4]);
+            __m256d b5 = _mm256_set1_pd(B[l * ldb + 5]);
+            __m256d b6 = _mm256_set1_pd(B[l * ldb + 6]);
+            __m256d b7 = _mm256_set1_pd(B[l * ldb + 7]);
+            __m256d b8 = _mm256_set1_pd(B[l * ldb + 8]);
+            __m256d b9 = _mm256_set1_pd(B[l * ldb + 9]);
+            __m256d b10 = _mm256_set1_pd(B[l * ldb + 10]);
+            __m256d b11 = _mm256_set1_pd(B[l * ldb + 11]);
+            
+            // FMA accumulation for first k iteration
+            c0 = _mm256_fmadd_pd(a0, b0, c0);
+            c1 = _mm256_fmadd_pd(a0, b1, c1);
+            c2 = _mm256_fmadd_pd(a0, b2, c2);
+            c3 = _mm256_fmadd_pd(a0, b3, c3);
+            c4 = _mm256_fmadd_pd(a0, b4, c4);
+            c5 = _mm256_fmadd_pd(a0, b5, c5);
+            c6 = _mm256_fmadd_pd(a0, b6, c6);
+            c7 = _mm256_fmadd_pd(a0, b7, c7);
+            c8 = _mm256_fmadd_pd(a0, b8, c8);
+            c9 = _mm256_fmadd_pd(a0, b9, c9);
+            c10 = _mm256_fmadd_pd(a0, b10, c10);
+            c11 = _mm256_fmadd_pd(a0, b11, c11);
+        }
         
-        // Load B values in groups of 4
-        __m256d b0 = _mm256_set1_pd(B[l * ldb + 0]);
-        __m256d b1 = _mm256_set1_pd(B[l * ldb + 1]);
-        __m256d b2 = _mm256_set1_pd(B[l * ldb + 2]);
-        __m256d b3 = _mm256_set1_pd(B[l * ldb + 3]);
-        
-        // First group of FMAs
-        c0 = _mm256_fmadd_pd(a, b0, c0);
-        c1 = _mm256_fmadd_pd(a, b1, c1);
-        c2 = _mm256_fmadd_pd(a, b2, c2);
-        c3 = _mm256_fmadd_pd(a, b3, c3);
-        
-        // Second group of B loads
-        __m256d b4 = _mm256_set1_pd(B[l * ldb + 4]);
-        __m256d b5 = _mm256_set1_pd(B[l * ldb + 5]);
-        __m256d b6 = _mm256_set1_pd(B[l * ldb + 6]);
-        __m256d b7 = _mm256_set1_pd(B[l * ldb + 7]);
-        
-        // Second group of FMAs
-        c4 = _mm256_fmadd_pd(a, b4, c4);
-        c5 = _mm256_fmadd_pd(a, b5, c5);
-        c6 = _mm256_fmadd_pd(a, b6, c6);
-        c7 = _mm256_fmadd_pd(a, b7, c7);
-        
-        // Third group of B loads
-        __m256d b8 = _mm256_set1_pd(B[l * ldb + 8]);
-        __m256d b9 = _mm256_set1_pd(B[l * ldb + 9]);
-        __m256d b10 = _mm256_set1_pd(B[l * ldb + 10]);
-        __m256d b11 = _mm256_set1_pd(B[l * ldb + 11]);
-        
-        // Third group of FMAs
-        c8 = _mm256_fmadd_pd(a, b8, c8);
-        c9 = _mm256_fmadd_pd(a, b9, c9);
-        c10 = _mm256_fmadd_pd(a, b10, c10);
-        c11 = _mm256_fmadd_pd(a, b11, c11);
+        // Second iteration
+        if (l + 1 < k) {
+            // Load next A column (4 elements)
+            __m256d a1 = _mm256_loadu_pd(&A[(l+1) * lda]);
+            
+            // Load next B row elements
+            __m256d b0 = _mm256_set1_pd(B[(l+1) * ldb + 0]);
+            __m256d b1 = _mm256_set1_pd(B[(l+1) * ldb + 1]);
+            __m256d b2 = _mm256_set1_pd(B[(l+1) * ldb + 2]);
+            __m256d b3 = _mm256_set1_pd(B[(l+1) * ldb + 3]);
+            __m256d b4 = _mm256_set1_pd(B[(l+1) * ldb + 4]);
+            __m256d b5 = _mm256_set1_pd(B[(l+1) * ldb + 5]);
+            __m256d b6 = _mm256_set1_pd(B[(l+1) * ldb + 6]);
+            __m256d b7 = _mm256_set1_pd(B[(l+1) * ldb + 7]);
+            __m256d b8 = _mm256_set1_pd(B[(l+1) * ldb + 8]);
+            __m256d b9 = _mm256_set1_pd(B[(l+1) * ldb + 9]);
+            __m256d b10 = _mm256_set1_pd(B[(l+1) * ldb + 10]);
+            __m256d b11 = _mm256_set1_pd(B[(l+1) * ldb + 11]);
+            
+            // FMA accumulation for second k iteration
+            c0 = _mm256_fmadd_pd(a1, b0, c0);
+            c1 = _mm256_fmadd_pd(a1, b1, c1);
+            c2 = _mm256_fmadd_pd(a1, b2, c2);
+            c3 = _mm256_fmadd_pd(a1, b3, c3);
+            c4 = _mm256_fmadd_pd(a1, b4, c4);
+            c5 = _mm256_fmadd_pd(a1, b5, c5);
+            c6 = _mm256_fmadd_pd(a1, b6, c6);
+            c7 = _mm256_fmadd_pd(a1, b7, c7);
+            c8 = _mm256_fmadd_pd(a1, b8, c8);
+            c9 = _mm256_fmadd_pd(a1, b9, c9);
+            c10 = _mm256_fmadd_pd(a1, b10, c10);
+            c11 = _mm256_fmadd_pd(a1, b11, c11);
+        }
     }
     
     // Store the updated accumulators back to C
