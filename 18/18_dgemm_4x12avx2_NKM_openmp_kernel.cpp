@@ -179,52 +179,57 @@ void dgemm_avx_kernel_nn(int m, int n, int k, double alpha,
         std::cerr << "Error: matrix dims must be multiples of 12." << std::endl;
         return;
     }
-    // Parallelize using collapsed loops for better parallelism
+
+    // Parallelize the outermost loop
     #pragma omp parallel
     {
         // Thread-local panel buffers to avoid false sharing
         ALIGN(CACHELINE) double Apanel_local[MC * KC] __attribute__((aligned(4096)));
         ALIGN(CACHELINE) double Bpanel_local[KC * NC] __attribute__((aligned(4096)));
-        
-        // Changed loop order to j-i-p and collapsed the outer two loops
-        #pragma omp for collapse(2) schedule(static)
+
+        #pragma omp for schedule(static)
         // Loop over N in blocks of NC
         for (int j = 0; j < n; j += NC) {
-            // Loop over panels of M
-            for (int i = 0; i < m; i += MC) {
-                int nc = std::min(NC, n - j);
-                int mc = std::min(MC, m - i);
-                // Pointer to the (i,j) corner of current C-panel
-                double *Cpanel = &C[i + j * ldc];
-                
-                // Initialize C panel before the k-loop
-                if (beta == 0.0) {
-                    // zero out entire Cpanel
-                    for (int jj = 0; jj < nc; ++jj) {
-                        double *Ccol = Cpanel + jj * ldc;
-                        for (int ii = 0; ii < mc; ++ii)
-                            Ccol[ii] = 0.0;
+            int nc = std::min(NC, n - j);
+
+            // Loop over panels of K
+            for (int p = 0; p < k; p += KC) {
+                int kc = std::min(KC, k - p);
+                const bool first_k_block = (p == 0);
+
+                // Pack kc×nc block of B and scale by alpha
+                pack_blockB(alpha, B, ldb, p, j, nc, kc, Bpanel_local);
+
+                // Loop over panels of M
+                for (int i = 0; i < m; i += MC) {
+                    int mc = std::min(MC, m - i);
+
+                    // Pointer to the (i,j) corner of current C-panel
+                    double *Cpanel = &C[i + j * ldc];
+
+                    // initialize or scale C only on the first k-block
+                    if (first_k_block) {
+                        if (beta == 0.0) {
+                            // zero out entire Cpanel
+                            for (int jj = 0; jj < nc; ++jj) {
+                                double *Ccol = Cpanel + jj * ldc;
+                                for (int ii = 0; ii < mc; ++ii)
+                                    Ccol[ii] = 0.0;
+                            }
+                        }
+                        else if (beta != 1.0) {
+                            // scale existing Cpanel by beta
+                            for (int jj = 0; jj < nc; ++jj) {
+                                double *Ccol = Cpanel + jj * ldc;
+                                for (int ii = 0; ii < mc; ++ii)
+                                    Ccol[ii] *= beta;
+                            }
+                        }
                     }
-                }
-                else if (beta != 1.0) {
-                    // scale existing Cpanel by beta
-                    for (int jj = 0; jj < nc; ++jj) {
-                        double *Ccol = Cpanel + jj * ldc;
-                        for (int ii = 0; ii < mc; ++ii)
-                            Ccol[ii] *= beta;
-                    }
-                }
-                
-                // Loop over panels of K - now innermost of the three main loops
-                for (int p = 0; p < k; p += KC) {
-                    int kc = std::min(KC, k - p);
-                    
-                    // Pack B panel and scale by alpha
-                    pack_blockB(alpha, B, ldb, p, j, nc, kc, Bpanel_local);
-                    
-                    // Pack A panel
+
+                    // Pack mc×kc slice of A into Apanel
                     pack_blockA(A, lda, i, p, mc, kc, Apanel_local);
-                    
+
                     // Compute micro-kernel over the C blocks
                     for (int jr = 0; jr < nc; jr += NR) {
                         // define Ccol_jr once per jr
@@ -335,7 +340,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Prepare output CSV file
-    std::ofstream csv_file("dgemm_benchmark_4x12avx2_openmp_kernel.csv");
+    std::ofstream csv_file("dgemm_benchmark_4x12avx2_NKM_openmp_kernel.csv");
     
     if (!csv_file.is_open()) {
         std::cerr << "Error: Could not open output file." << std::endl;
@@ -360,7 +365,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Sizes that are multiples of 192
-    for (int size = 1000; size <= 25000; size += 192) {
+    for (int size = 1000; size <= 10000; size += 192) {
         size_set.insert(size);
     }
 
@@ -438,7 +443,7 @@ int main(int argc, char *argv[]) {
     }
 
     csv_file.close();
-    std::cout << "Benchmark complete. Results saved to dgemm_benchmark_4x12avx2_openmp_kernel.csv" << std::endl;
+    std::cout << "Benchmark complete. Results saved to dgemm_benchmark_4x12avx2_NKM_openmp_kernel.csv" << std::endl;
 
     return 0;
 }
