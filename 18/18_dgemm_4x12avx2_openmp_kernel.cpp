@@ -16,9 +16,9 @@
 // Define block sizes
 #define MR 4
 #define NR 12
-#define MC 120
-#define KC 384
-#define NC 3072  
+#define MC 256
+#define KC 128
+#define NC 384
 
 #define CACHELINE 64
 #if defined(__GNUC__) || defined(__clang__)
@@ -187,7 +187,7 @@ void dgemm_avx_kernel_nn(int m, int n, int k, double alpha,
         ALIGN(CACHELINE) double Apanel_local[MC * KC] __attribute__((aligned(4096)));
         ALIGN(CACHELINE) double Bpanel_local[KC * NC] __attribute__((aligned(4096)));
 
-        #pragma omp for schedule(dynamic, 1) nowait
+        #pragma omp for schedule(static)
         // Loop over N in blocks of NC
         for (int j = 0; j < n; j += NC) {
             int nc = std::min(NC, n - j);
@@ -359,13 +359,29 @@ int main(int argc, char *argv[]) {
     
     std::set<int> size_set;
 
-    // Sizes that are multiples of 8 (8 to 3500)
-    for (int size = 12; size <= 3500; size += 12) {
+    // Sizes that are multiples of 12
+    for (int size = 12; size <= 1000; size += 12) {
         size_set.insert(size);
     }
 
+    // Sizes that are multiples of 192
+    for (int size = 1000; size <= 10000; size += 192) {
+        size_set.insert(size);
+    }
+
+    // Add specific sizes of interest (cache boundaries, power of 2, etc.)
+    std::vector<int> special_sizes = {
+        512, 1024, 2048, 3072, 3456  // Powers of 2 and potential cache boundaries
+    };
+
     // Convert set to vector (set is already sorted)
     std::vector<int> sizes(size_set.begin(), size_set.end());
+
+    for (auto& size : sizes) {
+        if (size % 12 != 0) {
+            size = ((size + 11) / 12) * 12;  // Fix it by rounding up
+        }
+    }
 
     const int num_trials = 5;  // 5 trials
     std::mt19937 mt(std::random_device{}());
