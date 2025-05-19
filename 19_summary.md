@@ -66,7 +66,7 @@
   
 ## 18. OpenMP並列化  
 - N→M→K ループを `#pragma omp parallel for collapse(2)` で並列化し、32C×64T環境で1.3 TFLOPS超  
-- スレッドローカルバッファによる false-sharing 回避と負荷分散戦略 :contentReference[oaicite:38]{index=38}:contentReference[oaicite:39]{index=39}  
+- スレッドローカルバッファによる false-sharing 回避と負荷分散戦略
 
 ## その他
  * データの流れは目に見えないため、暗中模索の感覚があり、最適化にはアーキテクチャの詳しい知識とそれに応じた最適化戦略が非常に重要。
