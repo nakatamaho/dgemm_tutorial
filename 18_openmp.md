@@ -49,7 +49,7 @@
 * 各スレッドが **スレッドローカルのパネルバッファ**を持ち false-sharing を回避
 * K-ループは最内側。共有軸なので還元不要（C はスレッド毎に固有ブロック）
 
-実装全体は `18_dgemm_4x12avx2_openmp_kernel.cpp` に収録 。
+実装全体は [18_dgemm_4x12avx2_openmp_kernel.cpp](https://github.com/nakatamaho/dgemm_tutorial/blob/main/18/18_dgemm_4x12avx2_openmp_kernel.cpp)` に収録 。
 
 ---
 
