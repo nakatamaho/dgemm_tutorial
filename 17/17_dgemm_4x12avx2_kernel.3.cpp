@@ -138,6 +138,36 @@ void avx2_micro_kernel_4x12_aligned(int k,
     _mm256_storeu_pd(&C[0 + 11*ldc], c11);
 }
 
+// Optimized packing functions - force inlining to reduce call overhead
+inline void pack_blockB(double alpha, const double * __restrict B, int ldb,
+                int p, int j, int nc, int kc, double * __restrict Bpanel) {
+    for (int jr = 0; jr < nc; jr += NR) {
+        int nr = std::min(NR, nc - jr);
+        // Avoid intermediate pointers and const_cast
+        for (int l = 0; l < kc; ++l) {
+            for (int jj = 0; jj < nr; ++jj)
+                Bpanel[jr * kc + l * NR + jj]
+                    = alpha * B[(p + l) + (j + jr + jj) * ldb];
+            for (int jj = nr; jj < NR; ++jj)
+                Bpanel[jr * kc + l * NR + jj] = 0.0;
+        }
+    }
+}
+
+// Optimized packing function for A - force inlining
+inline void pack_blockA(const double * __restrict A, int lda,
+                int i, int p, int mc, int kc, double * __restrict Apanel) {
+    for (int ir = 0; ir < mc; ir += MR) {
+        // Eliminate nested function call
+        for (int l = 0; l < kc; ++l) {
+            for (int ii = 0; ii < MR; ++ii) {
+                Apanel[ir * kc + l * MR + ii]
+                    = A[(i + ir + ii) + (p + l) * lda];
+            }
+        }
+    }
+}
+
 // DGEMM implementation using 4x12 micro kernel with transposed B panel, using L3 cache blocking
 void dgemm_avx_kernel_nn(int m, int n, int k, double alpha, 
                           const double * __restrict A, int lda,
@@ -160,16 +190,7 @@ void dgemm_avx_kernel_nn(int m, int n, int k, double alpha,
             const bool first_k_block = (p == 0);
 
             // Pack kc×nc block of B and scale by alpha
-            for (int jr = 0; jr < nc; jr += NR) {
-                int nr = std::min(NR, nc - jr);
-                for (int l = 0; l < kc; ++l) {
-                    for (int jj = 0; jj < nr; ++jj)
-                        Bpanel[jr * kc + l * NR + jj]
-                            = alpha * B[(p + l) + (j + jr + jj) * ldb];
-                    for (int jj = nr; jj < NR; ++jj)
-                        Bpanel[jr * kc + l * NR + jj] = 0.0;
-                }
-            }
+            pack_blockB(alpha, B, ldb, p, j, nc, kc, Bpanel);
 
             // Loop over panels of M
             for (int i = 0; i < m; i += MC) {
@@ -199,14 +220,7 @@ void dgemm_avx_kernel_nn(int m, int n, int k, double alpha,
                 }
 
                 // Pack mc×kc slice of A into Apanel
-                for (int ir = 0; ir < mc; ir += MR) {
-                    for (int l = 0; l < kc; ++l) {
-                        for (int ii = 0; ii < MR; ++ii) {
-                            Apanel[ir * kc + l * MR + ii]
-                                = A[(i + ir + ii) + (p + l) * lda];
-                        }
-                    }
-                }
+                pack_blockA(A, lda, i, p, mc, kc, Apanel);
 
                 // Compute micro-kernel over the C blocks
                 for (int jr = 0; jr < nc; jr += NR) {
@@ -317,7 +331,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Prepare output CSV file
-    std::ofstream csv_file("dgemm_benchmark_4x12avx2_kernel_results.2.csv");
+    std::ofstream csv_file("dgemm_benchmark_4x12avx2_kernel_results.3.csv");
     
     if (!csv_file.is_open()) {
         std::cerr << "Error: Could not open output file." << std::endl;
@@ -404,7 +418,7 @@ int main(int argc, char *argv[]) {
     }
 
     csv_file.close();
-    std::cout << "Benchmark complete. Results saved to dgemm_benchmark_4x12avx2_kernel_results.2.csv" << std::endl;
+    std::cout << "Benchmark complete. Results saved to dgemm_benchmark_4x12avx2_kernel_results.3.csv" << std::endl;
 
     return 0;
 }
