@@ -103,6 +103,10 @@ double benchmark(Func func) {
 }
 
 int main(int argc, char *argv[]) {
+#ifdef OPENBLAS_THREADPOOL
+    openblas_set_num_threads( omp_get_max_threads() );
+#endif
+
     // Parse command line arguments
     bool perform_checks = true;
     for (int i = 1; i < argc; i++) {

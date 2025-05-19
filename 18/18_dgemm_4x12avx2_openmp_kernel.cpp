@@ -365,7 +365,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Sizes that are multiples of 192
-    for (int size = 1000; size <= 10000; size += 192) {
+    for (int size = 1000; size <= 25000; size += 192) {
         size_set.insert(size);
     }
 
