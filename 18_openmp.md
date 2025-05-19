@@ -101,25 +101,3 @@
 > **再現方法**: `go.sh` を実行すると両実装を自動ビルドし、
 > `dgemm_benchmark_*.csv` に 5 回計測の GFLOPS が追記される 。
 
----
-
-## 5. 今後の改善ポイント
-
-1. **Prefetch 調整** — Zen 2 は L2 帯域に余裕があり、
-   `prefetchw` を過度に入れると競合; kernel 内 prefetch 行数を動的チューニング。
-2. **SIMD 幅アップ** — Zen 4+ で AVX-512 が解禁されたら 8 × 16 Kernel を検討。
-3. **Dynamic scheduling** — 行列サイズが素数系などブロック割り切れないケースでは
-   `schedule(dynamic, 1)` も試す価値あり。
-4. **NUMA 最適化** — TR 3990X 以上の 8-CCD 構成では
-   CCD ごとに `OMP_PLACES` を細分割し、ローカルメモリ比率を上げる。
-
----
-
-### 引用
-
-* コード全体 – `18_dgemm_4x12avx2_openmp_kernel.cpp`&#x20;
-* ビルド & 実行スクリプト – `go.sh`&#x20;
-
----
-
-本ドキュメントが Threadripper ユーザの DGEMM 最適化・OpenMP チューニングの参考になれば幸いです。
