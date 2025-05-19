@@ -82,6 +82,10 @@
 * NMK 版は **ループ一本化による並列効率**が高く、中-大サイズで OpenBLAS に肉薄
 * 小サイズ (≤4 k) はマイクロカーネル数が不足し命令DP 100 % ヒットせず差が開く
 
+![openmp](18/dgemm_kernels_comparison.png.png)
+
+
+
 > **再現方法**: `go.sh` を実行すると両実装を自動ビルドし、
 > `dgemm_benchmark_*.csv` に 5 回計測の GFLOPS が追記される 。
 
