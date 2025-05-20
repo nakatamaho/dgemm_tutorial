@@ -70,13 +70,25 @@ $$
 最終的にCでのインターフェースは
 
 ```c
-void dgemm_(const char* TRANSA, const char* TRANSB,
-            const int* M, const int* N, const int* K,
-            const double* ALPHA,
-            const double* A, const int* LDA,
-            const double* B, const int* LDB,
-            const double* BETA,
-            double* C, const int* LDC);
+#include <cblas.h>
+
+/* CBLAS のシグネチャ */
+void cblas_dgemm(
+    const CBLAS_LAYOUT Layout,       /* 行列のメモリレイアウト */
+    const CBLAS_TRANSPOSE TransA,     /* A の転置設定 */
+    const CBLAS_TRANSPOSE TransB,     /* B の転置設定 */
+    const int M,                      /* C の行数 */
+    const int N,                      /* C の列数 */
+    const int K,                      /* 演算の内積長 */
+    const double alpha,               /* α スカラー */
+    const double *A,                  /* A 行列（ポインタ） */
+    const int lda,                    /* A の先頭要素から次行（または次列）までのオフセット */
+    const double *B,                  /* B 行列（ポインタ） */
+    const int ldb,                    /* B の先頭要素から次行（または次列）までのオフセット */
+    const double beta,                /* β スカラー */
+    double *C,                        /* C 行列（ポインタ、出力） */
+    const int ldc                     /* C の先頭要素から次行（または次列）までのオフセット */
+);
 ```
 
 となってます。
