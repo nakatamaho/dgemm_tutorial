@@ -75,17 +75,17 @@ CPUパッケージ
 - **L3キャッシュはCCX単位**: L3キャッシュはCCX単位で管理しています。つまり4コアで16 MB L3を共有します。全体としては16*2*4=128MBのL3キャッシュがあります。この16MBに後述する行列パネルを収めるのも一つの手です。
 - **AVX2 レジスタ数**: 256 ビット幅の YMM レジスタが 16 本です。YMM一本にbinary64を４つ乗せることができます。それが16本、つまり64個binary64をレジスタに保持できます。
 - **L1 データキャッシュ内部のポート性能**: 2 回のロード + 1 回のストア / cycle (ロード帯域は 64 バイト/サイクル、ストア帯域は 32 バイト/サイクル)　-> L1からコアへのデータ転送はあまり考えなくてよい。また、2 回のロード + 1 回のストアというのは、FMAができるということ。64バイト/cycleは8 doubleロードできるということ。
-- **L2 キャッシュ->L1キャッシュ帯域** 32 bytes/cycle:。Zen 2 世代の L2 キャッシュは、L1/L3 間で「32 bytes per cycle」の帯域を持っています。この 32 B/cycle = 4 double/cycle という値に収めることが、大域的な設計パラメータとなります。
+- **L2 キャッシュ->L1キャッシュ帯域** 32 bytes/cycle:。Zen 2 世代の L2 キャッシュは、L1/L3 間で「32 bytes per cycle」の帯域を持っています。この 32 B/cycle = 4 double/cycle という値に収めることが、大域的な設計パラメータとなります。つまり、32 bytes/cycle以下のデータ供給アルゴリズムにしなければなりません。これ以上だとデータ供給がボトルネックになり、演算器の性能をフルに出すことはできません。
 
-このレベルの仕様を探すのは結構骨がいります。Ryzenシリーズはコンシューマ系なので公式から詳しい情報はあまりでてきません。Zen2というアーキテクチャなので、Zen2のアーキテクチャを調べます。そしてサーバ版であるEPYCで検索するとよいでしょう。
+このレベルの仕様を探すのは結構骨がいります。Ryzenシリーズはコンシューマ系なので公式から詳しい情報はあまりでてきません。Ryzen 3970XはZen2というアーキテクチャなので、Zen2のアーキテクチャを調べます。そしてサーバ版であるEPYCでも検索するとよいでしょう。
 
 * 情報源
 - [AMD EPYC™ 7002 tuning guide](https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/tuning-guides/amd-epyc-7002-tg-hpc-56827.pdf)
-- [AMD Ryzen Threadripper 3960X & 3970X CPU Review](https://www.kitguru.net/components/cpu/luke-hill/amd-ryzen-threadripper-3960x-3970x-cpu-review/2/) 、
-- [ChatGPTで検索](https://chatgpt.com/share/680f60cb-063c-800e-92c4-62f410668525)すると情報をまとめてくれます。
+- [AMD Ryzen Threadripper 3960X & 3970X CPU Review](https://www.kitguru.net/components/cpu/luke-hill/amd-ryzen-threadripper-3960x-3970x-cpu-review/2/) 
 - [Wikichips Zen2](https://en.wikichip.org/wiki/amd/microarchitectures/zen_2)
 - [Wikichips Zen](https://en.wikichip.org/wiki/amd/microarchitectures/zen)
-
+- [ChatGPTで検索](https://chatgpt.com/share/680f60cb-063c-800e-92c4-62f410668525)すると情報をまとめてくれます。
+  
 ## 5. Ryzen Threadripper 3970X の 1コアあたり 1サイクルでの最大演算回数
 
 CPU の理論演算性能を評価する際には、以下３つの要素を組み合わせて考えます：  
