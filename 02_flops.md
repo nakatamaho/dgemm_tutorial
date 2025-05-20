@@ -85,7 +85,7 @@ CPUパッケージ
 - [ChatGPTで検索](https://chatgpt.com/share/680f60cb-063c-800e-92c4-62f410668525)すると情報をまとめてくれます。
 - [Wikichips Zen2](https://en.wikichip.org/wiki/amd/microarchitectures/zen_2)
 - [Wikichips Zen](https://en.wikichip.org/wiki/amd/microarchitectures/zen)
-- 
+
 ## 5. Ryzen Threadripper 3970X の 1コアあたり 1サイクルでの最大演算回数
 
 CPU の理論演算性能を評価する際には、以下３つの要素を組み合わせて考えます：  
