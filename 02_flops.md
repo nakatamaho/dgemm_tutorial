@@ -61,7 +61,7 @@ Ryzen Threadripper 3970X の基本スペックは以下のようになります�
 ## 4. Ryzen Threadripper 3970X の基本スペック詳細
 
 - **アーキテクチャ名**: Zen2
-- **CPUパッケージの構成**：CPUパッケージには、Core Chiplet Die (or Core Complex Die; CCD)が４個あり、I/Oダイを切り離してます。CCDは小さくまとまったCPUみたいなものです。そして各CCDは2個 CCX(Core Complex; CCD内部で4個のコアとL3を共有する)を内包します。CCXには4個コアが存在します。このように階層構造をとることで、CPU製造の歩留まりを上げることができ、コア数も安定して増やすことが可能となっています（EPYCなどの製品群を見よ）。
+- **CPUパッケージの構成**：CPUパッケージには、Core Chiplet Die (or Core Complex Die; CCD)が４個あり、I/Oダイを切り離してます。CCDは小さくまとまったCPUみたいなものです。そして各CCDは2個 CCX(Core Complex; CCD内部で4個のコアとL3を共有する)を内包します。CCXには4個コアが存在します。このように階層構造をとることで、CPU製造の歩留まりを上げることができ、コア数も安定して増やすことが可能となっています（EPYCなどの製品群を見よ）。下の図を見つつ、Ryzen3970XはCCDにCCXが2個あり、CCXあたり4コア、つまりCCDあたり8コアあります。そしてCCDが4個あるので32コアとなっています。
 
 ```
 CPUパッケージ
