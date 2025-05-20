@@ -32,7 +32,7 @@ GEMMとは、general matrix multiplicationの略で、Dはdouble precision(binar
 |:-------:|------------------------------------------------|
 | 0️⃣     | [扉ページ](README.md)                           |
 | 1️⃣     | [DGEMM の基礎とインターフェース](01_introduction.md)  |
-| 2️⃣     | [Ryzen 3970Xの理論性能値の計算方法](02_flops.md)     |
+| 2️⃣     | [Ryzen 3970Xの理論性能値とチップの詳細（アーキテクチャ）の調べ方](02_flops.md)     |
 | 3️⃣     | [行列-行列積の初歩的なプログラム:プレDGEMM](03_pre_dgemm.md)     |    
 | 4️⃣     | [行列データの取り扱いとメモリ配置](04_Matrix_Memory_Layout.md)     |
 | 5️⃣     | [先導次元(leading dimension)の意味と重要性](05_Leading_Dimension.md)| 
