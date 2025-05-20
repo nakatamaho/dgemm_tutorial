@@ -83,6 +83,7 @@ CPUパッケージ
   - [AMD EPYC™ 7002 tuning guide](https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/tuning-guides/amd-epyc-7002-tg-hpc-56827.pdf)
   - [AMD Ryzen Threadripper 3960X & 3970X CPU Review](https://www.kitguru.net/components/cpu/luke-hill/amd-ryzen-threadripper-3960x-3970x-cpu-review/2/)
   - [Wikichips Zen2](https://en.wikichip.org/wiki/amd/microarchitectures/zen_2)
+  - [Wikipedia Zen2](https://en.wikipedia.org/wiki/Zen_2)写真がきれい
   - [Wikichips Zen](https://en.wikichip.org/wiki/amd/microarchitectures/zen)
   - [ChatGPTで検索](https://chatgpt.com/share/680f60cb-063c-800e-92c4-62f410668525)すると情報をまとめてくれます。
   
