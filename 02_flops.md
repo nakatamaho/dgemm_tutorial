@@ -55,8 +55,6 @@ Ryzen Threadripper 3970X の基本スペックは以下のようになります�
 - **L1 キャッシュ**：2048 kB (データ32KB/core; 命令32KB/core)
 - **L2 キャッシュ**：16 MB (512 KiB/core)
 - **L3 キャッシュ**：128 MB (32コアで共有)
-- **L1 データキャッシュ内部のポート性能**: 2 回のロード + 1 回のストア / cycle (ロード帯域は 64 バイト/サイクル、ストア帯域は 32 バイト/サイクル)
-- **L2 キャッシュ->L1キャッシュ帯域** 32 bytes/cycle
 
 これらの情報は[AMDの公式プロセッサの仕様ページ](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html)で確認できます。
 ただ、キャッシュの更なる詳細を公式サイトから探すのは難しく、[Wikichips Zen2](https://en.wikichip.org/wiki/amd/microarchitectures/zen_2)や[Wikichips Zen](https://en.wikichip.org/wiki/amd/microarchitectures/zen)で確認しました。Zen 2 世代の L2 キャッシュは、L1/L3 間で「32 bytes per cycle」の帯域を持っています。この 32 B/cycle = 4 double/cycle という値が、大域的な設計パラメータとなります。
@@ -64,11 +62,12 @@ Ryzen Threadripper 3970X の基本スペックは以下のようになります�
 ## 4. Ryzen Threadripper 3970X の基本スペック詳細
 
 これ以上詳しい仕様を探すのは結構骨がいります。Ryzenシリーズはコンシューマ系なので公式から詳しい情報はあまりでてきません。同じアーキテクチャのZen2のサーバー版である、EPYCで検索するとよいでしょう。
-たとえば、
-- [AMD EPYC™ 7002 tuning guide](https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/tuning-guides/amd-epyc-7002-tg-hpc-56827.pdf)
-も役に立ちます。EPYCはRyzenのサーバ向けの強化されたCPUです。Zen2であることは同じです。Chap9のDGEMMの章は特に役に立ちます。
 
-- CPUがどんな構成になっているかは、[AMD Ryzen Threadripper 3960X & 3970X CPU Review](https://www.kitguru.net/components/cpu/luke-hill/amd-ryzen-threadripper-3960x-3970x-cpu-review/2/) が役に立ちます。それによると、Ryzen 3970Xは、CCD(Core Complex Die; 小型ダイ。実際のCPUコアとL3キャッシュを内蔵)が4個あり、各CCDは2個 CCX(Core Complex; CCD内部で4個のコアとL3を共有する)を内包します。CXXには4個コアが存在します。コアごとに 32 KB L1 D、32 KB L1 I、512 KB L2を備え、CCX単位、つまり4コアで16 MB L3を共有します。従って、全体としては16*2*4=128MBのL3キャッシュがあります。
+- **L1 データキャッシュ内部のポート性能**: 2 回のロード + 1 回のストア / cycle (ロード帯域は 64 バイト/サイクル、ストア帯域は 32 バイト/サイクル)
+- **L2 キャッシュ->L1キャッシュ帯域** 32 bytes/cycle
+- **CCD(Core Complex Die)** の構成：CPUパッケージにはCPUコアとL3キャッシュを内蔵)が4個あり、各CCDは2個 CCX(Core Complex; CCD内部で4個のコアとL3を共有する)を内包します。CCXには4個コアが存在します。
+- **L1/L2はコアごとにキャッシュ**:  コア当たり、32 KB L1 D、32 KB L1 I、512 KB L2を備えます。
+- **L3キャッシュはCCX単位**: L3キャッシュはCCX単位で管理しています。つまり4コアで16 MB L3を共有します。全体としては16*2*4=128MBのL3キャッシュがあります。
 
 ```
 CPUパッケージ
@@ -78,6 +77,10 @@ CPUパッケージ
     └─ CCX 1（4 コア + 16 MB L3）
 ```
 
+* 情報源
+- [AMD EPYC™ 7002 tuning guide](https://www.amd.com/content/dam/amd/en/documents/epyc-technical-docs/tuning-guides/amd-epyc-7002-tg-hpc-56827.pdf)
+も役に立ちます。EPYCはRyzenのサーバ向けの強化されたCPUです。Zen2であることは同じです。
+- [AMD Ryzen Threadripper 3960X & 3970X CPU Review](https://www.kitguru.net/components/cpu/luke-hill/amd-ryzen-threadripper-3960x-3970x-cpu-review/2/) 、
 - [ChatGPTで検索](https://chatgpt.com/share/680f60cb-063c-800e-92c4-62f410668525)すると情報をまとめてくれます。
 
 ## 5. Ryzen Threadripper 3970X の 1コアあたり 1サイクルでの最大演算回数
