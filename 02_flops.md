@@ -56,12 +56,12 @@ Ryzen Threadripper 3970X の基本スペックは以下のようになります�
 - **L2 キャッシュ**：16 MB
 - **L3 キャッシュ**：128 MB
 
-これらの情報は[AMDの公式プロセッサの仕様ページ](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html)で確認できます。
+これらの情報は[AMDの公式プロセッサの仕様ページ](https://www.amd.com/ja/support/downloads/drivers.html/processors/ryzen-threadripper/ryzen-threadripper-3000-series/amd-ryzen-threadripper-3970x.html)で確認できます。かなりおおまかになります。
 
 ## 4. Ryzen Threadripper 3970X の基本スペック詳細
 
 - **アーキテクチャ名**: Zen2
-- **CPUパッケージの構成**：CPUパッケージには、Core Chiplet Die (or Core Complex Die; CCD)が４個あり、I/Oダイを切り離してます。CCDはちいさいまとまったCPUみたいなものです。そして各CCDは2個 CCX(Core Complex; CCD内部で4個のコアとL3を共有する)を内包します。CCXには4個コアが存在します。このように階層構造をとることで、CPU製造の歩留まりが上がり、コア数も安定して増やすことが可能となっています（EPYCなどの製品群を見よ）。
+- **CPUパッケージの構成**：CPUパッケージには、Core Chiplet Die (or Core Complex Die; CCD)が４個あり、I/Oダイを切り離してます。CCDは小さくまとまったCPUみたいなものです。そして各CCDは2個 CCX(Core Complex; CCD内部で4個のコアとL3を共有する)を内包します。CCXには4個コアが存在します。このように階層構造をとることで、CPU製造の歩留まりを上げることができ、コア数も安定して増やすことが可能となっています（EPYCなどの製品群を見よ）。
 
 ```
 CPUパッケージ
