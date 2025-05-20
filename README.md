@@ -50,3 +50,4 @@ GEMMとは、general matrix multiplicationの略で、Dはdouble precision(binar
 | 1️⃣7️⃣    |[DGEMM カーネルサイズ比較の詳細分析 - Ryzen Threadripper 3970X](17_avx2_kernels.md)|
 | 1️⃣8️⃣    |[OpenMPによるマルチコア活用 on Ryzen Threadripper 3970X](18_openmp.md)|
 | 1️⃣9️⃣   |[まとめ](19_summary.md)|
+| 2️⃣0️⃣   |[参考文献](20_bibliography.md)|
