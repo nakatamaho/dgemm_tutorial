@@ -1,5 +1,8 @@
 ## 参考文献および他のサイト
 
+* ["Anatomy of High-Performance Matrix Multiplication” (Goto & van de Geijn, ACM TOMS 34(3):12:1–12:25, 2008)](https://www.cs.utexas.edu/~flame/pubs/GotoTOMS_final.pdf)
+  - 記念碑的論文。このチュートリアル読んだ後はわかりやすくなってると思います。
+  
 * [Advanced Matrix Multiplication Optimization on Modern Multi-Core Processors](https://salykova.github.io/matmul-cpu)
   - 非常に素晴らしくよく書かれているチュートリアル。行列の端数にも対応している。少々短すぎるため、その行間をもう少し丁寧に埋めたものを作りたくなりこのtutorialをつくった。
 
