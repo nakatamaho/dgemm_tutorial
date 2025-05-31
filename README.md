@@ -1,5 +1,5 @@
 # DGEMM高速化チュートリアル
-**スクラッチから挑戦：Ryzen Threadripper 3970X で 1 TFLOPS への道**
+**スクラッチから挑戦：Ryzen Threadripper 3970X で 1.3 TFLOPS への道**
 
 ## 📖 DGEMMとは？
 
