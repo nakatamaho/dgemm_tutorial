@@ -5,7 +5,7 @@
 
 ## 🎯 このチュートリアルについて
 
-**DGEMM**（Double precision General Matrix Multiplication）をRyzen Threadripper 3970X上で最適化し、**ナイーブ実装から1000倍高速化**を実現する実践的チュートリアルです。
+**DGEMM**（Double precision General Matrix Multiplication; 行列-行列積）をRyzen Threadripper 3970X上で最適化し、**ナイーブ実装から1000倍高速化**を実現する実践的チュートリアルです。
 
 ### なぜDGEMMか？
 - 機械学習・科学計算の**心臓部**
@@ -13,7 +13,7 @@
 - 最適化効果が**数値で明確**に見える
 
 ### なぜ3970X特化か？
-CPU毎に最適化パラメータが大きく異なるため、汎用化より特化で確実な成果を目指します。
+CPU毎に最適化パラメータが大きく異なるため、汎用化より特化で確実な成果を目指します。筆者の
 
 ---
 
